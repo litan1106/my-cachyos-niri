@@ -27,6 +27,9 @@ dotfiles/
 │   └── settings.ini    ← Dark theme, cursor, min/max/close buttons
 ├── gtk-4.0/
 │   └── settings.ini    ← Same settings for GTK4 apps
+├── noctalia/
+│   ├── settings.json   ← Classic Windows 10 style taskbar layout settings
+│   └── plugins.json    ← Enabled quickshell desktop plugins
 ├── install.sh          ← One-shot interactive installer
 └── README.md
 ```
@@ -176,6 +179,8 @@ cp ~/.config/niri/config.kdl          niri/
 cp -r ~/.config/niri/cfg/*            niri/cfg/
 cp ~/.config/gtk-3.0/settings.ini     gtk-3.0/
 cp ~/.config/gtk-4.0/settings.ini     gtk-4.0/
+cp ~/.config/noctalia/settings.json   noctalia/
+cp ~/.config/noctalia/plugins.json    noctalia/
 
 # Commit your changes
 git add .

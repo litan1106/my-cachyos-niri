@@ -129,7 +129,13 @@ deploy_file "${DOTFILES_DIR}/gtk-3.0/settings.ini"  "$HOME/.config/gtk-3.0/setti
 deploy_file "${DOTFILES_DIR}/gtk-4.0/settings.ini"  "$HOME/.config/gtk-4.0/settings.ini"
 ok "GTK decoration layout applied (minimize, maximize, close)."
 
-# ── 7. System skel (optional) ─────────────────────────────────
+# ── 7. Deploy Noctalia Shell Config ───────────────────────────
+header "Deploying Noctalia Shell Config → ~/.config/noctalia"
+deploy_file "${DOTFILES_DIR}/noctalia/settings.json"  "$HOME/.config/noctalia/settings.json"
+deploy_file "${DOTFILES_DIR}/noctalia/plugins.json"   "$HOME/.config/noctalia/plugins.json"
+ok "Noctalia shell configuration deployed."
+
+# ── 8. System skel (optional) ─────────────────────────────────
 echo ""
 read -p "Copy setup to /etc/skel for new users? [y/N] " -n 1 -r; echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -140,14 +146,23 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     sudo mkdir -p /etc/skel/.config/gtk-3.0 /etc/skel/.config/gtk-4.0
     sudo cp "$HOME/.config/gtk-3.0/settings.ini" /etc/skel/.config/gtk-3.0/
     sudo cp "$HOME/.config/gtk-4.0/settings.ini" /etc/skel/.config/gtk-4.0/
+    sudo mkdir -p /etc/skel/.config/noctalia
+    sudo cp "$HOME/.config/noctalia/settings.json" /etc/skel/.config/noctalia/
+    sudo cp "$HOME/.config/noctalia/plugins.json"  /etc/skel/.config/noctalia/
     ok "Copied to /etc/skel."
 fi
 
-# ── 8. Live Reload Niri ───────────────────────────────────────
+# ── 9. Live Reload Configs ────────────────────────────────────
 if [ -n "${NIRI_SOCKET:-}" ] || pgrep -x niri &>/dev/null; then
     header "Reloading Niri"
     niri msg action load-config-file || true
     ok "Niri configuration reloaded."
+fi
+
+if pgrep -x quickshell &>/dev/null; then
+    header "Reloading Noctalia Shell"
+    qs -c noctalia-shell ipc call core restart || true
+    ok "Noctalia shell configuration reloaded."
 fi
 
 echo ""
