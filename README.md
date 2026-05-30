@@ -33,24 +33,31 @@ dotfiles/
 
 ---
 
-## 🛠️ Install (fresh machine)
+## 🛠️ Installation & Syncing (Fresh Machine)
+
+To deploy these customizations to a fresh CachyOS installation running Niri:
 
 ```bash
-git clone <your-repo-url> ~/dotfiles
+# 1. Clone your personal dotfiles repository
+git clone https://github.com/litan1106/my-cachyos-niri.git ~/dotfiles
+
+# 2. Navigate into the dotfiles directory
 cd ~/dotfiles
+
+# 3. Make the installer executable and run it
 chmod +x install.sh
 ./install.sh
 ```
 
-The installer will:
-1. Verify Arch/CachyOS system
-2. Detect or install `yay` (AUR helper)
-3. Sync **official CachyOS** packages via `pacman`
-4. Sync **custom AUR** packages via `yay`
-5. Deploy `niri/` configs to `~/.config/niri/` (with timestamped backup)
-6. Deploy `gtk-3.0/` and `gtk-4.0/` to `~/.config/` (with backup)
-7. Optionally copy everything to `/etc/skel/` for new system users
-8. Live-reload Niri if it is running
+### What the installer does automatically:
+1. **Verifies system compatibility** (expects Arch Linux / CachyOS).
+2. **Detects or installs `yay`** as the AUR helper.
+3. **Synchronizes core packages** via `pacman` (Niri, Noctalia Shell, Alacritty, Tmux, etc.).
+4. **Synchronizes customized helper packages** via `yay` (Google Chrome, Typora, Antigravity, Antigravity IDE, Claude Desktop, and Codex Desktop).
+5. **Safely deploys Niri configurations** from `dotfiles/niri/` to `~/.config/niri/` (creating a timestamped backup of any existing configuration first).
+6. **Deploys GTK window buttons** (`gtk-3.0` and `gtk-4.0` settings) so you instantly get **Minimize, Maximize, and Close** buttons on all your window titlebars.
+7. **Optionally updates `/etc/skel/`** (requires sudo) so any new users created on the system automatically inherit this setup.
+8. **Live-reloads Niri** if it is currently running, applying your settings instantly.
 
 ---
 
@@ -154,21 +161,39 @@ Resolve any conflicts in `niri/cfg/keybinds.kdl` if a key you customised was als
 
 ---
 
-## 💾 Saving Your Changes
+## 🔄 Syncing Customizations Across Machines
 
-After modifying any config:
+When you are using Niri and make changes (e.g., updating custom keybindings in `~/.config/niri/cfg/keybinds.kdl` or changing display setups), you can easily sync them back to your repository and distribute them across all your CachyOS machines.
+
+### 1. Push live changes to your GitHub repository:
+Whenever you customize something on your current active machine, sync it back to your personal repository:
 
 ```bash
 cd ~/dotfiles
 
-# Pull in live changes you made to configs
+# Copy the latest live settings into the repository folder
 cp ~/.config/niri/config.kdl          niri/
-cp ~/.config/niri/cfg/*               niri/cfg/
+cp -r ~/.config/niri/cfg/*            niri/cfg/
 cp ~/.config/gtk-3.0/settings.ini     gtk-3.0/
 cp ~/.config/gtk-4.0/settings.ini     gtk-4.0/
 
-# Commit and push
+# Commit your changes
 git add .
-git commit -m "feat: describe your changes here"
+git commit -m "feat: update keybindings and display layouts"
+
+# Push to your remote repository
 git push origin main
+```
+
+### 2. Pull and apply updates on another machine:
+On your other CachyOS machines, run this simple sequence to fetch and apply the updated configurations live:
+
+```bash
+cd ~/dotfiles
+
+# Fetch the latest updates from GitHub
+git pull origin main
+
+# Deploy the updated configurations live (will automatically backup existing ones and reload Niri)
+./install.sh
 ```
