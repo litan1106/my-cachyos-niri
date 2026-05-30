@@ -102,7 +102,7 @@
                     "onlyActiveWorkspaces": true,
                     "onlySameOutput": true,
                     "showPinnedApps": true,
-                    "showTitle": false,
+                    "showTitle": true,
                     "smartWidth": true,
                     "titleWidth": 120
                 },
