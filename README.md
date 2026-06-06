@@ -168,6 +168,40 @@ Resolve any conflicts in `niri/cfg/keybinds.kdl` if a key you customised was als
 
 ---
 
+## 🛠️ How to Customize Things
+
+You can customize every part of this tiling desktop ecosystem. The system is split into three layers:
+
+### 1. Compositor & Keybindings (Niri)
+All window management, layout rules, animations, and hotkeys are configured via Niri KDL files.
+* **Configuration Path**: `~/.config/niri/cfg/`
+  * Edit `keybinds.kdl` to change shortcut triggers, launch new applications, or bind scripts.
+  * Edit `layout.kdl` to customize window gaps, borders, layout modes, and dimensions.
+  * Edit `autostart.kdl` to add/remove services launching on startup.
+* **Applying Changes**: Niri automatically live-reloads configurations as soon as you save any `.kdl` file. To force a reload manually:
+  ```bash
+  niri msg action load-config-file
+  ```
+
+### 2. Status Bar, Taskbar & Start Menu (Noctalia Shell)
+The bottom bar, widgets, and the Start Menu launcher are powered by Quickshell.
+* **Settings JSON Path**: `~/.config/noctalia/settings.json`
+  * Rearrange bar widget order in `bar.widgets` (`left`, `center`, `right`). Available widgets include `Launcher`, `Taskbar`, `Workspace`, `Clock`, `Tray`, `Volume`, `Battery`, `Brightness`, `NotificationHistory`, and `ControlCenter`.
+  * Adjust bar position, spacing, opacity, margins, and corner radii.
+* **Custom QML Layouts Path**: `~/.config/quickshell/noctalia-shell/`
+  * Customize advanced shell interfaces (like the Start Menu profile and power button footer) in QML files (e.g. `Modules/Panels/Launcher/LauncherCore.qml`).
+* **Applying Changes**: Restart the shell to reload settings and QML components:
+  ```bash
+  qs -c noctalia-shell kill && qs -c noctalia-shell --daemonize
+  ```
+
+### 3. Window Control Buttons (GTK)
+Controls window decorations (Minimize, Maximize, Close buttons) for GTK and Electron applications.
+* **Configuration Path**: `~/.config/gtk-3.0/settings.ini` and `~/.config/gtk-4.0/settings.ini`
+  * Change button layout using `gtk-decoration-layout=menu:minimize,maximize,close`.
+
+---
+
 ## 🔄 Syncing Customizations Across Machines
 
 When you are using Niri and make changes (e.g., updating custom keybindings in `~/.config/niri/cfg/keybinds.kdl` or changing display setups), you can easily sync them back to your repository and distribute them across all your CachyOS machines.
