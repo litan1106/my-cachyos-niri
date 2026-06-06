@@ -30,6 +30,10 @@ dotfiles/
 ├── noctalia/
 │   ├── settings.json   ← Classic Windows 10 style taskbar layout settings
 │   └── plugins.json    ← Enabled quickshell desktop plugins
+├── quickshell/
+│   └── noctalia-shell/
+│       └── Modules/Panels/Launcher/
+│           └── LauncherCore.qml  ← Custom Windows-style Start Menu power options layout
 ├── install.sh          ← One-shot interactive installer
 └── README.md
 ```
@@ -181,6 +185,8 @@ cp ~/.config/gtk-3.0/settings.ini     gtk-3.0/
 cp ~/.config/gtk-4.0/settings.ini     gtk-4.0/
 cp ~/.config/noctalia/settings.json   noctalia/
 cp ~/.config/noctalia/plugins.json    noctalia/
+cp ~/.config/quickshell/noctalia-shell/Modules/Panels/Launcher/LauncherCore.qml \
+   quickshell/noctalia-shell/Modules/Panels/Launcher/LauncherCore.qml
 
 # Commit your changes
 git add .

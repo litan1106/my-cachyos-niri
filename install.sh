@@ -135,7 +135,18 @@ deploy_file "${DOTFILES_DIR}/noctalia/settings.json"  "$HOME/.config/noctalia/se
 deploy_file "${DOTFILES_DIR}/noctalia/plugins.json"   "$HOME/.config/noctalia/plugins.json"
 ok "Noctalia shell configuration deployed."
 
-# ── 8. System skel (optional) ─────────────────────────────────
+# ── 8. Deploy Custom Quickshell Layouts ────────────────────────
+header "Deploying Custom Quickshell Layouts → ~/.config/quickshell"
+if [ ! -d "$HOME/.config/quickshell/noctalia-shell" ]; then
+    info "Copying system noctalia-shell config to local home..."
+    mkdir -p "$HOME/.config/quickshell"
+    cp -r /etc/xdg/quickshell/noctalia-shell "$HOME/.config/quickshell/noctalia-shell"
+fi
+deploy_file "${DOTFILES_DIR}/quickshell/noctalia-shell/Modules/Panels/Launcher/LauncherCore.qml" \
+            "$HOME/.config/quickshell/noctalia-shell/Modules/Panels/Launcher/LauncherCore.qml"
+ok "Custom quickshell layouts deployed."
+
+# ── 9. System skel (optional) ─────────────────────────────────
 echo ""
 read -p "Copy setup to /etc/skel for new users? [y/N] " -n 1 -r; echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -149,10 +160,12 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     sudo mkdir -p /etc/skel/.config/noctalia
     sudo cp "$HOME/.config/noctalia/settings.json" /etc/skel/.config/noctalia/
     sudo cp "$HOME/.config/noctalia/plugins.json"  /etc/skel/.config/noctalia/
+    sudo mkdir -p /etc/skel/.config/quickshell
+    sudo cp -r "$HOME/.config/quickshell/noctalia-shell" /etc/skel/.config/quickshell/
     ok "Copied to /etc/skel."
 fi
 
-# ── 9. Live Reload Configs ────────────────────────────────────
+# ── 10. Live Reload Configs ────────────────────────────────────
 if [ -n "${NIRI_SOCKET:-}" ] || pgrep -x niri &>/dev/null; then
     header "Reloading Niri"
     niri msg action load-config-file || true
