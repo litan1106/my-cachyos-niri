@@ -163,25 +163,35 @@ CUSTOM_AUR_PACKAGES=(
 $AUR_HELPER -S --needed --noconfirm "${CUSTOM_AUR_PACKAGES[@]}"
 ok "AUR packages synchronized."
 
-# ── 5. Deploy Niri Config ─────────────────────────────────────
+# ── 5. Set Default Shell to Bash ────────────────────────────
+header "Setting Default Shell → bash"
+if [ "$(getent passwd "$USER" | cut -d: -f7)" != "/bin/bash" ]; then
+    info "Switching default shell to bash (replacing current: $(getent passwd "$USER" | cut -d: -f7))..."
+    chsh -s /bin/bash
+    ok "Default shell set to bash. Re-login to apply."
+else
+    ok "Default shell is already bash — nothing to do."
+fi
+
+# ── 6. Deploy Niri Config ─────────────────────────────────────
 header "Deploying Niri Config → ~/.config/niri"
 deploy_file "${DOTFILES_DIR}/niri/config.kdl"    "$HOME/.config/niri/config.kdl"
 deploy_niri_cfg "${DOTFILES_DIR}/niri/cfg"        "$HOME/.config/niri/cfg"
 ok "Niri configuration deployed."
 
-# ── 6. Deploy GTK Theming ─────────────────────────────────────
+# ── 7. Deploy GTK Theming ─────────────────────────────────────
 header "Deploying GTK3/4 Decoration Settings"
 deploy_file "${DOTFILES_DIR}/gtk-3.0/settings.ini"  "$HOME/.config/gtk-3.0/settings.ini"
 deploy_file "${DOTFILES_DIR}/gtk-4.0/settings.ini"  "$HOME/.config/gtk-4.0/settings.ini"
 ok "GTK decoration layout applied (minimize, maximize, close)."
 
-# ── 7. Deploy Noctalia Shell Config ───────────────────────────
+# ── 8. Deploy Noctalia Shell Config ───────────────────────────
 header "Deploying Noctalia Shell Config → ~/.config/noctalia"
 deploy_file "${DOTFILES_DIR}/noctalia/settings.json"  "$HOME/.config/noctalia/settings.json"
 deploy_file "${DOTFILES_DIR}/noctalia/plugins.json"   "$HOME/.config/noctalia/plugins.json"
 ok "Noctalia shell configuration deployed."
 
-# ── 8. Deploy Custom Quickshell Layouts ────────────────────────
+# ── 9. Deploy Custom Quickshell Layouts ────────────────────────
 header "Deploying Custom Quickshell Layouts → ~/.config/quickshell"
 if [ ! -d "$HOME/.config/quickshell/noctalia-shell" ]; then
     info "Copying system noctalia-shell config to local home..."
@@ -192,7 +202,7 @@ deploy_file "${DOTFILES_DIR}/quickshell/noctalia-shell/Modules/Panels/Launcher/L
             "$HOME/.config/quickshell/noctalia-shell/Modules/Panels/Launcher/LauncherCore.qml"
 ok "Custom quickshell layouts deployed."
 
-# ── 9. System skel (optional) ─────────────────────────────────
+# ── 10. System skel (optional) ────────────────────────────────
 echo ""
 read -p "Copy setup to /etc/skel for new users? [y/N] " -n 1 -r; echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -223,7 +233,7 @@ EOF
     ok "Copied to /etc/skel."
 fi
 
-# ── 10. Live Reload Configs ────────────────────────────────────
+# ── 11. Live Reload Configs ────────────────────────────────────
 if [ -n "${NIRI_SOCKET:-}" ] || pgrep -x niri &>/dev/null; then
     header "Reloading Niri"
     niri msg action load-config-file || true

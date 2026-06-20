@@ -98,7 +98,7 @@ System-level CachyOS customization packages, hooks, mirror listings, and visual 
 > [!WARNING]
 > **CachyOS specifics are excluded** from `install.sh` as they are pre-configured by the installer and system profile. Overwriting these on non-CachyOS installations could break system packages.
 
-- **Branding & Shell Configs**: `cachyos-wallpapers`, `cachyos-hello`, `cachyos-fish-config`, `cachyos-zsh-config`
+- **Branding & Shell Configs**: `cachyos-wallpapers`, `cachyos-hello`, `cachyos-fish-config`, `cachyos-zsh-config` — **Note:** this setup uses `bash` as the default login shell (`chsh -s /bin/bash`); `cachyos-fish-config` is left installed but inactive.
 - **System Settings & Hooks**: `cachyos-settings`, `cachyos-hooks`, `cachyos-micro-settings`, `cachyos-rate-mirrors`, `chwd`
 - **Package Manager Lists**: `cachyos-keyring`, `cachyos-mirrorlist`, `cachyos-v3-mirrorlist`, `cachyos-v4-mirrorlist`
 - **Installer & Snapper**: `cachyos-packageinstaller`, `cachyos-snapper-support`
