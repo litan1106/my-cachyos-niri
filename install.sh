@@ -55,6 +55,31 @@ deploy_dir() {
     done
 }
 
+deploy_niri_cfg() {
+    local src="$1"
+    local dest="$2"
+
+    mkdir -p "$dest"
+
+    for f in "$src"/*; do
+        if [ "$(basename "$f")" = "display.kdl" ]; then
+            warn "Skipping display.kdl; monitor/output config is machine-specific."
+            continue
+        fi
+
+        deploy_file "$f" "$dest/$(basename "$f")"
+    done
+
+    if [ ! -e "$dest/display.kdl" ]; then
+        info "Creating empty display.kdl placeholder for local monitor settings."
+        cat > "$dest/display.kdl" <<'EOF'
+// Local monitor/output configuration.
+// This file is intentionally not overwritten by install.sh.
+// Run `niri msg outputs` and add machine-specific output rules here if needed.
+EOF
+    fi
+}
+
 # ──────────────────────────────────────────────────────────────
 echo ""
 echo -e "${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -66,6 +91,19 @@ echo ""
 header "Pre-flight Check"
 [ -f /etc/arch-release ] || err "This installer is for CachyOS / Arch Linux only."
 ok "Arch-based system detected."
+warn "It does not overwrite ~/.config/niri/cfg/display.kdl; monitor/output rules stay local to this machine."
+
+# Warn if existing configuration directories are detected
+if [ -d "$HOME/.config/niri" ] || [ -d "$HOME/.config/noctalia" ] || [ -d "$HOME/.config/quickshell/noctalia-shell" ]; then
+    warn "Existing configuration directories detected:"
+    [ -d "$HOME/.config/niri" ] && echo "  - ~/.config/niri"
+    [ -d "$HOME/.config/noctalia" ] && echo "  - ~/.config/noctalia"
+    [ -d "$HOME/.config/quickshell/noctalia-shell" ] && echo "  - ~/.config/quickshell/noctalia-shell"
+    warn "This installer will deploy new configurations and back up modified files."
+fi
+
+read -p "Continue with package sync and config deployment? [Y/n] " -n 1 -r; echo ""
+[[ $REPLY =~ ^[Nn]$ ]] && err "Installation cancelled."
 
 # ── 2. AUR Helper ─────────────────────────────────────────────
 header "AUR Helper"
@@ -92,14 +130,19 @@ ok "Using: ${AUR_HELPER}"
 # ── 3. Official & CachyOS Packages ───────────────────────────
 header "Official / CachyOS Packages"
 OFFICIAL_PACKAGES=(
-    niri
-    cachyos-niri-noctalia
-    noctalia-shell
-    noctalia-qs
     alacritty
+    btop
+    cliphist
+    fastfetch
+    github-desktop
+    handbrake
+    jdownloader2
+    pavucontrol
+    qbittorrent
     tmux
-    nautilus
-    obsidian
+    udiskie
+    vlc
+    wl-clipboard
 )
 sudo pacman -S --needed --noconfirm "${OFFICIAL_PACKAGES[@]}"
 ok "Official packages synchronized."
@@ -110,9 +153,12 @@ CUSTOM_AUR_PACKAGES=(
     typora
     google-chrome
     antigravity
+    antigravity-cli
     antigravity-ide
     claude-desktop-bin
+    espanso-wayland-git
     openai-codex-desktop
+    visual-studio-code-bin
 )
 $AUR_HELPER -S --needed --noconfirm "${CUSTOM_AUR_PACKAGES[@]}"
 ok "AUR packages synchronized."
@@ -120,7 +166,7 @@ ok "AUR packages synchronized."
 # ── 5. Deploy Niri Config ─────────────────────────────────────
 header "Deploying Niri Config → ~/.config/niri"
 deploy_file "${DOTFILES_DIR}/niri/config.kdl"    "$HOME/.config/niri/config.kdl"
-deploy_dir  "${DOTFILES_DIR}/niri/cfg"            "$HOME/.config/niri/cfg"
+deploy_niri_cfg "${DOTFILES_DIR}/niri/cfg"        "$HOME/.config/niri/cfg"
 ok "Niri configuration deployed."
 
 # ── 6. Deploy GTK Theming ─────────────────────────────────────
@@ -153,7 +199,19 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     header "Deploying to /etc/skel"
     sudo mkdir -p /etc/skel/.config/niri/cfg
     sudo cp -r "$HOME/.config/niri/config.kdl"  /etc/skel/.config/niri/
-    sudo cp -r "$HOME/.config/niri/cfg/"*        /etc/skel/.config/niri/cfg/
+    for f in "$HOME/.config/niri/cfg/"*; do
+        if [ "$(basename "$f")" = "display.kdl" ]; then
+            warn "Skipping /etc/skel display.kdl; monitor/output config is machine-specific."
+            continue
+        fi
+
+        sudo cp "$f" /etc/skel/.config/niri/cfg/
+    done
+    sudo tee /etc/skel/.config/niri/cfg/display.kdl >/dev/null <<'EOF'
+// Local monitor/output configuration.
+// This file is intentionally not overwritten by install.sh.
+// Run `niri msg outputs` and add machine-specific output rules here if needed.
+EOF
     sudo mkdir -p /etc/skel/.config/gtk-3.0 /etc/skel/.config/gtk-4.0
     sudo cp "$HOME/.config/gtk-3.0/settings.ini" /etc/skel/.config/gtk-3.0/
     sudo cp "$HOME/.config/gtk-4.0/settings.ini" /etc/skel/.config/gtk-4.0/

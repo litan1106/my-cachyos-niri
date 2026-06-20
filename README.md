@@ -59,12 +59,14 @@ chmod +x install.sh
 ### What the installer does automatically:
 1. **Verifies system compatibility** (expects Arch Linux / CachyOS).
 2. **Detects or installs `yay`** as the AUR helper.
-3. **Synchronizes core packages** via `pacman` (Niri, Noctalia Shell, Alacritty, Tmux, etc.).
+3. **Synchronizes user packages** via `pacman` (Alacritty, udiskie automounting, Wayland clipboard history, etc.).
 4. **Synchronizes customized helper packages** via `yay` (Google Chrome, Typora, Antigravity, Antigravity IDE, Claude Desktop, and Codex Desktop).
-5. **Safely deploys Niri configurations** from `dotfiles/niri/` to `~/.config/niri/` (creating a timestamped backup of any existing configuration first).
+5. **Safely deploys Niri configurations** from `dotfiles/niri/` to `~/.config/niri/` (creating a timestamped backup of any existing configuration first), while leaving monitor/output config local to each machine.
 6. **Deploys GTK window buttons** (`gtk-3.0` and `gtk-4.0` settings) so you instantly get **Minimize, Maximize, and Close** buttons on all your window titlebars.
 7. **Optionally updates `/etc/skel/`** (requires sudo) so any new users created on the system automatically inherit this setup.
 8. **Live-reloads Niri** if it is currently running, applying your settings instantly.
+
+> **Monitor note**: `niri/cfg/display.kdl` is intentionally not installed or overwritten by `install.sh`, because display names, refresh rates, scaling, and positions are machine-specific. After install, run `niri msg outputs` on each machine and edit `~/.config/niri/cfg/display.kdl` locally if you need explicit monitor rules.
 
 ---
 
@@ -93,14 +95,11 @@ Resolve any conflicts in `niri/cfg/keybinds.kdl` if a key you customised was als
 ### Official / CachyOS Repos (`pacman`)
 | Package | Purpose |
 |---|---|
-| `niri` | Scrollable tiling Wayland compositor |
-| `cachyos-niri-noctalia` | CachyOS Niri + Noctalia defaults |
-| `noctalia-shell` | Wayland desktop shell |
-| `noctalia-qs` | Quickshell fork powering Noctalia |
 | `alacritty` | GPU-accelerated terminal |
-| `tmux` | Terminal multiplexer |
-| `nautilus` | File manager |
+| `cliphist` | Wayland clipboard history backend |
 | `obsidian` | Local markdown knowledge base |
+| `udiskie` | User-session removable drive automounting |
+| `wl-clipboard` | Wayland clipboard command-line tools |
 
 ### AUR Packages (`yay`)
 | Package | Purpose |
@@ -120,6 +119,7 @@ Resolve any conflicts in `niri/cfg/keybinds.kdl` if a key you customised was als
 | Hotkey | Action |
 |---|---|
 | `Super + Space` | App launcher |
+| `Super + V` | Clipboard history |
 | `Super + Alt + Space` | System / session menu |
 | `Super + Escape` | System menu |
 | `Super + Ctrl + L` | Lock screen |
