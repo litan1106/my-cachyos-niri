@@ -248,3 +248,56 @@ git pull origin main
 # Deploy the updated configurations live (will automatically backup existing ones and reload Niri)
 ./install.sh
 ```
+
+---
+
+## 🐛 Troubleshooting
+
+### GitHub Desktop won't open (AMD GPU + Wayland / Niri)
+
+**Symptoms**: Running `github-desktop` prints only Fontconfig warnings and a radv notice — no window ever appears.
+
+**Root cause**: GitHub Desktop (Electron/Chromium) tries to use hardware-accelerated EGL via ANGLE for its GPU subprocess. On AMD + Wayland this fails immediately:
+
+```
+eglCreateImage failed with 0x00003009
+OzoneImageBacking::ProduceSkiaGanesh failed to create GL representation
+GPU process exited unexpectedly: exit_code=8704
+```
+
+Chromium retries the GPU process a few times then gives up, and the app exits silently before creating any Wayland surface.
+
+There are two things that can cause the app to not open:
+
+1. **Stale `SingletonLock`** — A previous crashed session leaves lock files that block new launches. New invocations silently signal the dead process and exit immediately.
+2. **EGL/ANGLE crash loop** — Even after the lock is cleared, the GPU process crashes on every start until a workaround is applied.
+
+**Fix (one-time setup)**:
+
+```bash
+# 1. Kill any orphaned github-desktop processes
+pkill -9 -f github-desktop 2>/dev/null
+
+# 2. Remove stale singleton lock files
+rm -f "$HOME/.config/GitHub Desktop/SingletonLock" \
+      "$HOME/.config/GitHub Desktop/SingletonSocket" \
+      "$HOME/.config/GitHub Desktop/SingletonCookie"
+
+# 3. Clear corrupted GPU shader caches
+rm -rf "$HOME/.config/GitHub Desktop/GPUCache" \
+       "$HOME/.config/GitHub Desktop/DawnGraphiteCache" \
+       "$HOME/.config/GitHub Desktop/DawnWebGPUCache" \
+       "$HOME/.config/GitHub Desktop/Code Cache"
+
+# 4. Patch the system launch wrapper to use SwiftShader (software GL)
+#    This bypasses the broken hardware EGL path permanently
+pkexec tee /usr/bin/github-desktop > /dev/null << 'EOF'
+#!/bin/sh
+
+/opt/github-desktop/github-desktop --use-gl=swiftshader "$@"
+EOF
+```
+
+> **Why `--use-gl=swiftshader`?** SwiftShader is ANGLE's CPU-based OpenGL ES renderer bundled inside GitHub Desktop itself (`/opt/github-desktop/libvk_swiftshader.so`). It bypasses the system's EGL/DRM stack entirely, so it is unaffected by AMD driver or Wayland compositor version. Rendering performance is still perfectly adequate for a Git UI.
+
+> **Note**: The patch to `/usr/bin/github-desktop` will be overwritten when the `github-desktop` package is updated via `pacman` / `yay`. Re-run step 4 after each package upgrade if the issue returns.

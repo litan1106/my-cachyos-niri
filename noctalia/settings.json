@@ -316,7 +316,7 @@
                 ]
             }
         ],
-        "overviewEnabled": true
+        "overviewEnabled": false
     },
     "dock": {
         "animationSpeed": 1,

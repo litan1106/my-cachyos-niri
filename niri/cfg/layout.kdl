@@ -10,7 +10,7 @@
             proportion 0.66667
         }
 
-        default-column-width {} // Use app's preferred/natural size
+        default-column-width { proportion 0.5; } // Two windows fill screen; use Mod+= to expand lone windows
 
 
         focus-ring {

@@ -146,6 +146,23 @@ if ! $DRY; then
     fi
 fi
 
+# ── Restart quickshell (noctalia-shell) ──────────────────────────
+if ! $DRY; then
+    needs_qs_restart=false
+    [[ " ${TARGETS[*]} " == *" qs "* ]]       && needs_qs_restart=true
+    [[ " ${TARGETS[*]} " == *" noctalia "* ]] && needs_qs_restart=true
+
+    if $needs_qs_restart && pgrep -x qs &>/dev/null; then
+        echo -e "${BLUE}[*] Restarting quickshell (noctalia-shell)...${NC}"
+        pkill -x qs
+        sleep 0.5
+        nohup qs -c noctalia-shell &>/dev/null &
+        disown
+        echo -e "${GREEN}[✔] Quickshell restarted!${NC}"
+        echo ""
+    fi
+fi
+
 # ── Done ─────────────────────────────────────────────────────────
 echo -e "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 if $DRY; then
