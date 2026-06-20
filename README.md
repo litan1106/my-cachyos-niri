@@ -68,6 +68,12 @@ chmod +x install.sh
 
 > **Monitor note**: `niri/cfg/display.kdl` is intentionally not installed or overwritten by `install.sh`, because display names, refresh rates, scaling, and positions are machine-specific. After install, run `niri msg outputs` on each machine and edit `~/.config/niri/cfg/display.kdl` locally if you need explicit monitor rules.
 
+> **Input note**: `niri/cfg/input.kdl` is gitignored — it contains device-specific settings (keyboard layout, mouse/touchpad sensitivity) that differ per machine. After install, apply these recommended tweaks manually in `~/.config/niri/cfg/input.kdl`:
+> - **Disable `focus-follows-mouse`** — comment it out so windows don't resize/refocus as you hover; focus only changes on click. Without this, moving the mouse over any window instantly shifts focus and causes the active column to resize.
+>   ```kdl
+>   // focus-follows-mouse
+>   ```
+
 ---
 
 ## 🔄 Keeping in Sync with CachyOS Upstream
