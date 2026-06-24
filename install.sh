@@ -173,6 +173,13 @@ else
     ok "Default shell is already bash — nothing to do."
 fi
 
+header "Deploying Bash Configs"
+if [ -d "${DOTFILES_DIR}/bash" ]; then
+    [ -f "${DOTFILES_DIR}/bash/.bashrc" ] && deploy_file "${DOTFILES_DIR}/bash/.bashrc" "$HOME/.bashrc"
+    [ -f "${DOTFILES_DIR}/bash/.inputrc" ] && deploy_file "${DOTFILES_DIR}/bash/.inputrc" "$HOME/.inputrc"
+    ok "Bash configuration deployed."
+fi
+
 # ── 6. Deploy Niri Config ─────────────────────────────────────
 header "Deploying Niri Config → ~/.config/niri"
 deploy_file "${DOTFILES_DIR}/niri/config.kdl"    "$HOME/.config/niri/config.kdl"
@@ -230,6 +237,8 @@ EOF
     sudo cp "$HOME/.config/noctalia/plugins.json"  /etc/skel/.config/noctalia/
     sudo mkdir -p /etc/skel/.config/quickshell
     sudo cp -r "$HOME/.config/quickshell/noctalia-shell" /etc/skel/.config/quickshell/
+    [ -f "$HOME/.bashrc" ] && sudo cp "$HOME/.bashrc" /etc/skel/
+    [ -f "$HOME/.inputrc" ] && sudo cp "$HOME/.inputrc" /etc/skel/
     ok "Copied to /etc/skel."
 fi
 

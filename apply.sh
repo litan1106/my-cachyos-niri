@@ -33,17 +33,18 @@ for arg in "$@"; do
     case "$arg" in
         --dry)   DRY=true ;;
         --help|-h)
-            echo "Usage: ./apply.sh [niri|gtk|qs|noctalia] [--dry]"
+            echo "Usage: ./apply.sh [niri|gtk|qs|noctalia|bash] [--dry]"
             echo ""
             echo "  (no args)   Sync all config areas"
             echo "  niri        Sync ~/.config/niri (config.kdl + cfg/)"
             echo "  gtk         Sync ~/.config/gtk-3.0 and gtk-4.0 settings"
             echo "  qs          Sync ~/.config/quickshell/noctalia-shell"
             echo "  noctalia    Sync ~/.config/noctalia/settings.json"
+            echo "  bash        Sync ~/.bashrc and ~/.inputrc"
             echo "  --dry       Preview changes without applying"
             exit 0
             ;;
-        niri|gtk|qs|noctalia) TARGETS+=("$arg") ;;
+        niri|gtk|qs|noctalia|bash) TARGETS+=("$arg") ;;
         *)
             echo -e "${RED}[ERROR] Unknown argument: $arg${NC}"
             echo "Run './apply.sh --help' for usage."
@@ -54,7 +55,7 @@ done
 
 # Default: sync everything
 if [ ${#TARGETS[@]} -eq 0 ]; then
-    TARGETS=(niri gtk qs noctalia)
+    TARGETS=(niri gtk qs noctalia bash)
 fi
 
 # ── Helpers ──────────────────────────────────────────────────────
@@ -129,6 +130,16 @@ if [[ " ${TARGETS[*]} " == *" noctalia "* ]]; then
         echo ""
     else
         echo -e "${YELLOW}[!] No noctalia/settings.json found in repo, skipping.${NC}"
+        echo ""
+    fi
+fi
+
+# ── Sync: Bash ───────────────────────────────────────────────────
+if [[ " ${TARGETS[*]} " == *" bash "* ]]; then
+    if [ -d "${REPO_DIR}/bash" ]; then
+        echo -e "${BLUE}[*] Syncing bash config...${NC}"
+        [ -f "${REPO_DIR}/bash/.bashrc" ] && sync_file "${REPO_DIR}/bash/.bashrc" "$HOME/.bashrc"
+        [ -f "${REPO_DIR}/bash/.inputrc" ] && sync_file "${REPO_DIR}/bash/.inputrc" "$HOME/.inputrc"
         echo ""
     fi
 fi
