@@ -51,6 +51,12 @@ cd ~/.config/niri-omarchy
 ./install.sh
 ```
 
+### Step 3: Network File Sharing (Optional)
+If you need to share files over the local network via Samba (SMB), you can run the included helper script to automatically configure Avahi (mDNS), WSDD (Windows discovery), and UFW firewall rules:
+```bash
+sudo ./setup_smb_discovery.sh
+```
+
 ---
 
 ## ⌨️ Hotkey Survival Guide
@@ -113,3 +119,15 @@ If you make modifications to your keybinds or settings in `~/.config/niri/cfg/`:
    git push origin main
    ```
 3. To replicate the exact same setup on any other Arch Linux / CachyOS machine, simply clone it and run `./install.sh` again!
+
+---
+
+## ⚠️ Known Issues & Quirks
+
+### GitHub Desktop (Wayland + AMD GPU)
+If you are using an AMD GPU, **GitHub Desktop** (and some other Electron apps) may crash or hang invisibly when trying to negotiate OpenGL contexts natively on Wayland. To fix this, force native Wayland and disable GPU acceleration. 
+
+Update the `.desktop` shortcut (e.g., in `~/.local/share/applications/github-desktop.desktop`) to include the following flags in the Exec line:
+```ini
+Exec=/usr/bin/github-desktop --ozone-platform-hint=auto --disable-gpu %U
+```
