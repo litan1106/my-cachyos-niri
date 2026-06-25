@@ -1,5 +1,5 @@
     layout {
-        gaps 16 // Gap between windows
+        gaps 8 // Gap between windows
         center-focused-column "never" // Don’t auto-center focused column
 
         background-color "transparent" // <- needed for noctalia-shell to set wallpaper
@@ -8,6 +8,17 @@
             proportion 0.33333
             proportion 0.5
             proportion 0.66667
+        }
+
+        default-column-width { proportion 0.5; } // Two windows fill screen; use Mod+= to expand lone windows
+
+
+        focus-ring {
+            off // No border around active window (prevents apparent size shift on click)
+        }
+
+        border {
+            off
         }
 
         struts {}

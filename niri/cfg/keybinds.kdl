@@ -1,172 +1,136 @@
 binds {
 
-    // ────────────── Keybindings ──────────────
-    // https://github.com/YaLTeR/niri/wiki/Configuration:-Key-Bindings
+    // ─── Hotkey Guide ───
+    Mod+K { show-hotkey-overlay; }
 
-    // ─── noctalia-shell / Omarchy System Controls ───
-    Mod+Shift+ESCAPE                     { show-hotkey-overlay; }
-    Mod+Space                           hotkey-overlay-title="Open App Launcher: noctalia launcher" { spawn-sh "qs -c noctalia-shell ipc call launcher toggle"; }
-    Mod+CTRL+Return                     hotkey-overlay-title="Open App Launcher: noctalia launcher" { spawn-sh "qs -c noctalia-shell ipc call launcher toggle"; }
-    Mod+ALT+Space                       hotkey-overlay-title="Session Menu: noctalia sessionMenu" { spawn-sh "qs -c noctalia-shell ipc call sessionMenu toggle"; }
-    Mod+ESCAPE                          hotkey-overlay-title="System Menu: noctalia sessionMenu" { spawn-sh "qs -c noctalia-shell ipc call sessionMenu toggle"; }
-    Mod+CTRL+L                          hotkey-overlay-title="Lock Screen: noctalia lock" { spawn-sh "qs -c noctalia-shell ipc call lockScreen lock"; }
-    Mod+Shift+Q                         hotkey-overlay-title="Session Menu: noctalia sessionMenu" { spawn-sh "qs -c noctalia-shell ipc call sessionMenu toggle"; }
-
-    // ─── Launching Applications (Omarchy Defaults) ───
-    Mod+Return                          hotkey-overlay-title="Open Terminal: Alacritty" { spawn "alacritty"; }
-    Mod+ALT+Return                      hotkey-overlay-title="Open Tmux Terminal" { spawn "alacritty" "-e" "tmux"; }
-    Mod+Shift+Return                    hotkey-overlay-title="Open Browser: Google Chrome" { spawn "google-chrome"; }
-    Mod+Shift+ALT+B                     hotkey-overlay-title="Open Browser (Incognito)" { spawn "google-chrome" "--incognito"; }
-    Mod+Shift+F                         hotkey-overlay-title="File Manager: Nautilus" { spawn "nautilus"; }
-    Mod+E                               hotkey-overlay-title="File Manager: Nautilus" { spawn "nautilus"; }
-    Mod+B                               hotkey-overlay-title="Open Browser: Google Chrome" { spawn "google-chrome"; }
-    Mod+Shift+N                         hotkey-overlay-title="Open Antigravity IDE" { spawn "antigravity-ide"; }
-    Mod+Shift+C                         hotkey-overlay-title="Open HEY Calendar" { spawn "google-chrome" "https://app.hey.com/calendar"; }
-    Mod+Shift+E                         hotkey-overlay-title="Open HEY Mail" { spawn "google-chrome" "https://app.hey.com/mail"; }
-    Mod+Shift+A                         hotkey-overlay-title="Open Claude Desktop" { spawn "claude-desktop"; }
-    Mod+Shift+ALT+A                     hotkey-overlay-title="Open Codex Desktop" { spawn "codex"; }
-    Mod+Shift+G                         hotkey-overlay-title="Open Antigravity App" { spawn "antigravity"; }
-    Mod+Shift+O                         hotkey-overlay-title="Open Obsidian" { spawn "obsidian"; }
-    Mod+Shift+W                         hotkey-overlay-title="Open Typora" { spawn "typora"; }
-    Mod+Shift+Y                         hotkey-overlay-title="Open YouTube" { spawn "google-chrome" "https://youtube.com"; }
-
-    // ─── Media Controls ───
-    XF86AudioRaiseVolume                allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call volume increase"; }
-    XF86AudioLowerVolume                allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call volume decrease"; }
-    XF86AudioMute                       allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call volume muteOutput"; }
-    XF86AudioMicMute                    allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call volume muteInput"; }
-    XF86AudioNext                       allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call media next"; }
-    XF86AudioPrev                       allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call media previous"; }
-    XF86AudioPlay                       allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call media playPause"; }
-    XF86AudioPause                      allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call media playPause"; }
-
-    // ─── Brightness Controls ───
-    XF86MonBrightnessUp                 allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call brightness increase"; }
-    XF86MonBrightnessDown               allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call brightness decrease"; }
-
-    // ─── Window Movement and Focus ───
-    Mod+Q                               { close-window; }
+    // ─── Navigating (Omarchy Keymap) ───
+    Mod+Space                           hotkey-overlay-title="Open App Launcher" { spawn-sh "qs -c noctalia-shell ipc call launcher toggle"; }
+    Mod+ALT+Space                       hotkey-overlay-title="Omarchy Control Menu" { spawn-sh "qs -c noctalia-shell ipc call controlCenter toggle"; }
+    Mod+ESCAPE                          hotkey-overlay-title="System Menu" { spawn-sh "qs -c noctalia-shell ipc call sessionMenu toggle"; }
+    Mod+CTRL+L                          hotkey-overlay-title="Lock Computer" { spawn-sh "qs -c noctalia-shell ipc call lockScreen lock"; }
     Mod+W                               { close-window; }
-
-    Mod+Left                            { focus-column-left; }
-    Mod+H                               { focus-column-left; }
-    Mod+Right                           { focus-column-right; }
-    Mod+L                               { focus-column-right; }
-    Mod+Up                              { maximize-column; }
-    Mod+K                               { focus-window-up; }
-    Mod+Down                            { focus-window-down; }
-    Mod+J                               { focus-window-down; }
-
-    // Swapping / Moving windows (Super+Shift+Arrows / Vim-keys)
-    Mod+Shift+Left                      { move-column-left; }
-    Mod+Shift+H                         { move-column-left; }
-    Mod+Shift+Right                     { move-column-right; }
-    Mod+Shift+L                         { move-column-right; }
-    Mod+Shift+UP                        { move-window-up; }
-    Mod+Shift+K                         { move-window-up; }
-    Mod+Shift+Down                      { move-window-down; }
-    Mod+Shift+J                         { move-window-down; }
-
-    // Legacy Control Move-bindings (kept for compatibility, except Ctrl+L which locks screen)
-    Mod+CTRL+Left                       { move-column-left; }
-    Mod+CTRL+H                          { move-column-left; }
-    Mod+CTRL+Right                      { move-column-right; }
-    Mod+CTRL+UP                         { move-window-up; }
-    Mod+CTRL+K                          { move-window-up; }
-    Mod+CTRL+Down                       { move-window-down; }
-    Mod+CTRL+J                          { move-window-down; }
-
-    Mod+Home                            { focus-column-first; }
-    Mod+End                             { focus-column-last; }
-    Mod+CTRL+Home                       { move-column-to-first; }
-    Mod+CTRL+End                        { move-column-to-last; }
-
-    // Monitor Focus and Move
-    Mod+CTRL+Shift+Left                 { focus-monitor-left; }
-    Mod+CTRL+Shift+Right                { focus-monitor-right; }
-    Mod+CTRL+Shift+UP                   { focus-monitor-up; }
-    Mod+CTRL+Shift+Down                 { focus-monitor-down; }
-
-    // ─── Workspace Switching ───
-    Mod+WheelScrollDown                 cooldown-ms=150 { focus-workspace-down; }
-    Mod+WheelScrollUp                   cooldown-ms=150 { focus-workspace-up; }
-    Mod+CTRL+WheelScrollDown            cooldown-ms=150 { move-column-to-workspace-down; }
-    Mod+CTRL+WheelScrollUp              cooldown-ms=150 { move-column-to-workspace-up; }
-
-    Mod+WheelScrollRight                { focus-column-right; }
-    Mod+WheelScrollLeft                 { focus-column-left; }
-    Mod+CTRL+WheelScrollRight           { move-column-right; }
-    Mod+CTRL+WheelScrollLeft            { move-column-left; }
-
-    Mod+Shift+WheelScrollDown           { focus-column-right; }
-    Mod+Shift+WheelScrollUp             { focus-column-left; }
-    Mod+CTRL+Shift+WheelScrollDown      { move-column-right; }
-    Mod+CTRL+Shift+WheelScrollUp        { move-column-left; }
+    CTRL+ALT+Delete                     { quit; }
+    Mod+T                               { toggle-window-floating; }
+    Mod+F                               { fullscreen-window; }
+    Mod+ALT+F                           { maximize-column; }
+    Mod+CTRL+F                          { maximize-window-to-edges; }
 
     Mod+1                               { focus-workspace 1; }
     Mod+2                               { focus-workspace 2; }
     Mod+3                               { focus-workspace 3; }
     Mod+4                               { focus-workspace 4; }
-    Mod+5                               { focus-workspace 5; }
-    Mod+6                               { focus-workspace 6; }
-    Mod+7                               { focus-workspace 7; }
-    Mod+8                               { focus-workspace 8; }
-    Mod+9                               { focus-workspace 9; }
-
-    Mod+CTRL+1                          { move-column-to-workspace 1; }
-    Mod+CTRL+2                          { move-column-to-workspace 2; }
-    Mod+CTRL+3                          { move-column-to-workspace 3; }
-    Mod+CTRL+4                          { move-column-to-workspace 4; }
-    Mod+CTRL+5                          { move-column-to-workspace 5; }
-    Mod+CTRL+6                          { move-column-to-workspace 6; }
-    Mod+CTRL+7                          { move-column-to-workspace 7; }
-    Mod+CTRL+8                          { move-column-to-workspace 8; }
-    Mod+CTRL+9                          { move-column-to-workspace 9; }
-
-    Mod+Shift+1                         { move-column-to-workspace 1; }
-    Mod+Shift+2                         { move-column-to-workspace 2; }
-    Mod+Shift+3                         { move-column-to-workspace 3; }
-    Mod+Shift+4                         { move-column-to-workspace 4; }
-    Mod+Shift+5                         { move-column-to-workspace 5; }
-    Mod+Shift+6                         { move-column-to-workspace 6; }
-    Mod+Shift+7                         { move-column-to-workspace 7; }
-    Mod+Shift+8                         { move-column-to-workspace 8; }
-    Mod+Shift+9                         { move-column-to-workspace 9; }
 
     Mod+TAB                             { focus-workspace-down; }
     Mod+Shift+TAB                       { focus-workspace-up; }
     Mod+CTRL+TAB                        { focus-workspace-previous; }
 
-    // ─── Layout & Grow Controls (Omarchy standard) ───
-    Mod+ALT+F                           { maximize-column; }
-    Mod+CTRL+F                          { maximize-window-to-edges; }
-    Mod+C                               { center-column; }
-    Mod+CTRL+C                          { center-visible-columns; }
-    Mod+Minus                           { set-column-width "-10%"; }
-    Mod+Equal                           { set-column-width "+10%"; }
-    Mod+Shift+Minus                     { set-window-height "-10%"; }
-    Mod+Shift+Equal                     { set-window-height "+10%"; }
+    Mod+Shift+1                         { move-column-to-workspace 1; }
+    Mod+Shift+2                         { move-column-to-workspace 2; }
+    Mod+Shift+3                         { move-column-to-workspace 3; }
+    Mod+Shift+4                         { move-column-to-workspace 4; }
 
-    // ─── Window Grouping / Tabbed Modes ───
-    Mod+T                               { toggle-window-floating; }
-    Mod+F                               { fullscreen-window; }
+    Mod+Shift+ALT+1                     { move-window-to-workspace 1; }
+    Mod+Shift+ALT+2                     { move-window-to-workspace 2; }
+    Mod+Shift+ALT+3                     { move-window-to-workspace 3; }
+    Mod+Shift+ALT+4                     { move-window-to-workspace 4; }
+
+    Mod+Shift+ALT+Left                  { move-column-to-monitor-left; }
+    Mod+Shift+ALT+Right                 { move-column-to-monitor-right; }
+    Mod+Shift+ALT+Up                    { move-column-to-monitor-up; }
+    Mod+Shift+ALT+Down                  { move-column-to-monitor-down; }
+
+    Mod+Left                            { focus-column-left; }
+    Mod+Right                           { focus-column-right; }
+    Mod+Up                              { focus-window-up; }
+    Mod+Down                            { focus-window-down; }
+
+    Mod+Shift+Left                      { move-column-left; }
+    Mod+Shift+Right                     { move-column-right; }
+    Mod+Shift+Up                        { move-window-up; }
+    Mod+Shift+Down                      { move-window-down; }
+
+    Mod+Equal                           { set-column-width "+10%"; }
+    Mod+Minus                           { set-column-width "-10%"; }
+    Mod+Shift+Equal                     { set-window-height "+10%"; }
+    Mod+Shift+Minus                     { set-window-height "-10%"; }
+
+    Mod+WheelScrollDown   cooldown-ms=150 { focus-workspace-down; }
+    Mod+WheelScrollUp     cooldown-ms=150 { focus-workspace-up; }
+
     Mod+G                               { toggle-column-tabbed-display; }
     Mod+ALT+G                           { expel-window-from-column; }
     Mod+ALT+Tab                         { focus-window-down; }
     Mod+ALT+Left                        { consume-window-into-column; }
     Mod+ALT+Right                       { consume-window-into-column; }
 
-    // ─── Screenshots ───
-    CTRL+Shift+1                        { screenshot; }
-    CTRL+Shift+2                        { screenshot-screen; }
-    CTRL+Shift+3                        { screenshot-window; }
+    Mod+CTRL+Left                       { focus-column-left; }
+    Mod+CTRL+Right                      { focus-column-right; }
+    Mod+CTRL+Up                         { focus-window-up; }
+    Mod+CTRL+Down                       { focus-window-down; }
 
-    // ─── Emergency Escape Key ───
-    // Restores control if standard bindings are blocked by a fullscreen application
-    Mod+CTRL+ESCAPE                     allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
+    Mod+S                               { toggle-overview; }
 
-    // ─── Exit / Power ───
-    CTRL+ALT+Delete                     { quit; }
-    Mod+Shift+P                         { power-off-monitors; }
-    Mod+O                               repeat=false { toggle-overview; }
+    ALT+Tab                             { focus-column-right; }
+    ALT+Shift+Tab                       { focus-column-left; }
+    CTRL+ALT+Tab                        { focus-monitor-right; }
+    CTRL+ALT+Shift+Tab                  { focus-monitor-left; }
+
+    // ─── System Controls (Omarchy Keymap) ───
+    Mod+CTRL+A                          hotkey-overlay-title="Audio Controls (wiremix)" { spawn "alacritty" "-e" "wiremix"; }
+    Mod+CTRL+B                          hotkey-overlay-title="Bluetooth Controls (bluetui)" { spawn "alacritty" "-e" "bluetui"; }
+    Mod+CTRL+W                          hotkey-overlay-title="Wifi Controls (impala)" { spawn "alacritty" "-e" "impala"; }
+    Mod+CTRL+S                          hotkey-overlay-title="Share Menu (LocalSend)" { spawn "localsend"; }
+    Mod+CTRL+T                          hotkey-overlay-title="Activity Monitor" { spawn "alacritty" "-e" "btop"; }
+    Mod+CTRL+C                          hotkey-overlay-title="Interactive Capture" { screenshot; }
+
+    // ─── Adjustments (Omarchy Keymap) ───
+    XF86AudioRaiseVolume                allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call volume increase"; }
+    XF86AudioLowerVolume                allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call volume decrease"; }
+    XF86AudioMute                       allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call volume muteOutput"; }
+    XF86AudioMicMute                    allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call volume muteInput"; }
+    XF86MonBrightnessUp                 allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call brightness increase"; }
+    XF86MonBrightnessDown               allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call brightness decrease"; }
+
+    // ─── Launching Applications (Omarchy Keymap) ───
+    Mod+Return                          hotkey-overlay-title="Open Terminal" { spawn "alacritty"; }
+    Mod+ALT+Return                      hotkey-overlay-title="Open Tmux Terminal" { spawn "alacritty" "-e" "tmux"; }
+    Mod+Shift+Return                    hotkey-overlay-title="Open Browser" { spawn "google-chrome-stable"; }
+    Mod+Shift+ALT+B                     hotkey-overlay-title="Open Browser (Incognito)" { spawn "google-chrome-stable" "--incognito"; }
+    Mod+Shift+F                         hotkey-overlay-title="File Manager" { spawn "nautilus"; }
+    Mod+Shift+ALT+F                     hotkey-overlay-title="File Manager (CWD)" { spawn "nautilus"; }
+    Mod+Shift+M                         hotkey-overlay-title="Open Spotify" { spawn "spotify"; }
+    Mod+Shift+ALT+M                     hotkey-overlay-title="Open Cliamp" { spawn "alacritty" "-e" "cliamp"; }
+    Mod+Shift+Slash                     hotkey-overlay-title="Open 1Password" { spawn "1password"; }
+    Mod+Shift+N                         hotkey-overlay-title="Open Neovim" { spawn "alacritty" "-e" "nvim"; }
+    Mod+Shift+C                         hotkey-overlay-title="Open HEY Calendar" { spawn "google-chrome-stable" "https://app.hey.com/calendar"; }
+    Mod+Shift+E                         hotkey-overlay-title="Open HEY Mail" { spawn "google-chrome-stable" "https://app.hey.com/mail"; }
+    Mod+Shift+A                         hotkey-overlay-title="Open ChatGPT" { spawn "google-chrome-stable" "https://chatgpt.com"; }
+    Mod+Shift+ALT+A                     hotkey-overlay-title="Open Grok" { spawn "google-chrome-stable" "https://grok.com"; }
+    Mod+Shift+G                         hotkey-overlay-title="Open Signal" { spawn "signal-desktop"; }
+    Mod+Shift+Alt+G                     hotkey-overlay-title="Open WhatsApp" { spawn "google-chrome-stable" "https://web.whatsapp.com"; }
+    Mod+Shift+Ctrl+G                    hotkey-overlay-title="Open Google Chat" { spawn "google-chrome-stable" "https://chat.google.com"; }
+    Mod+Shift+D                         hotkey-overlay-title="Open LazyDocker" { spawn "alacritty" "-e" "lazydocker"; }
+    Mod+Shift+O                         hotkey-overlay-title="Open Obsidian" { spawn "obsidian"; }
+    Mod+Shift+W                         hotkey-overlay-title="Open Typora" { spawn "typora"; }
+    Mod+Shift+X                         hotkey-overlay-title="Open X" { spawn "google-chrome-stable" "https://x.com"; }
+    Mod+Shift+Y                         hotkey-overlay-title="Open YouTube" { spawn "google-chrome-stable" "https://youtube.com"; }
+
+    // ─── Universal Clipboard & History (Omarchy Keymap) ───
+    Mod+CTRL+V                          hotkey-overlay-title="Clipboard History" { spawn-sh "qs -c noctalia-shell ipc call launcher clipboard"; }
+
+    // ─── Capture (Omarchy Keymap) ───
+    Print                               { screenshot; }
+    ALT+Print                           { screenshot-screen; }
+    Mod+Print                           { screenshot-window; }
+
+    // ─── Notifications (Omarchy Keymap) ───
+    Mod+comma                           { spawn-sh "qs -c noctalia-shell ipc call notifications dismissOldest"; }
+    Mod+Shift+comma                     { spawn-sh "qs -c noctalia-shell ipc call notifications dismissAll"; }
+    Mod+CTRL+comma                      { spawn-sh "qs -c noctalia-shell ipc call notifications toggleDND"; }
+
+    // ─── Toggles (Omarchy Keymap) ───
+    Mod+CTRL+I                          { spawn-sh "qs -c noctalia-shell ipc call idleInhibitor toggle"; }
+    Mod+CTRL+N                          { spawn-sh "qs -c noctalia-shell ipc call nightLight toggle"; }
+    Mod+CTRL+Delete                     { power-off-monitors; }
+    Mod+Shift+Space                     { spawn-sh "qs -c noctalia-shell ipc call bar toggle"; }
 }

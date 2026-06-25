@@ -55,6 +55,31 @@ deploy_dir() {
     done
 }
 
+deploy_niri_cfg() {
+    local src="$1"
+    local dest="$2"
+
+    mkdir -p "$dest"
+
+    for f in "$src"/*; do
+        if [ "$(basename "$f")" = "display.kdl" ]; then
+            warn "Skipping display.kdl; monitor/output config is machine-specific."
+            continue
+        fi
+
+        deploy_file "$f" "$dest/$(basename "$f")"
+    done
+
+    if [ ! -e "$dest/display.kdl" ]; then
+        info "Creating empty display.kdl placeholder for local monitor settings."
+        cat > "$dest/display.kdl" <<'EOF'
+// Local monitor/output configuration.
+// This file is intentionally not overwritten by install.sh.
+// Run `niri msg outputs` and add machine-specific output rules here if needed.
+EOF
+    fi
+}
+
 # ──────────────────────────────────────────────────────────────
 echo ""
 echo -e "${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -66,6 +91,19 @@ echo ""
 header "Pre-flight Check"
 [ -f /etc/arch-release ] || err "This installer is for CachyOS / Arch Linux only."
 ok "Arch-based system detected."
+warn "It does not overwrite ~/.config/niri/cfg/display.kdl; monitor/output rules stay local to this machine."
+
+# Warn if existing configuration directories are detected
+if [ -d "$HOME/.config/niri" ] || [ -d "$HOME/.config/noctalia" ] || [ -d "$HOME/.config/quickshell/noctalia-shell" ]; then
+    warn "Existing configuration directories detected:"
+    [ -d "$HOME/.config/niri" ] && echo "  - ~/.config/niri"
+    [ -d "$HOME/.config/noctalia" ] && echo "  - ~/.config/noctalia"
+    [ -d "$HOME/.config/quickshell/noctalia-shell" ] && echo "  - ~/.config/quickshell/noctalia-shell"
+    warn "This installer will deploy new configurations and back up modified files."
+fi
+
+read -p "Continue with package sync and config deployment? [Y/n] " -n 1 -r; echo ""
+[[ $REPLY =~ ^[Nn]$ ]] && err "Installation cancelled."
 
 # ── 2. AUR Helper ─────────────────────────────────────────────
 header "AUR Helper"
@@ -92,14 +130,19 @@ ok "Using: ${AUR_HELPER}"
 # ── 3. Official & CachyOS Packages ───────────────────────────
 header "Official / CachyOS Packages"
 OFFICIAL_PACKAGES=(
-    niri
-    cachyos-niri-noctalia
-    noctalia-shell
-    noctalia-qs
     alacritty
+    btop
+    cliphist
+    fastfetch
+    github-desktop
+    handbrake
+    jdownloader2
+    pavucontrol
+    qbittorrent
     tmux
-    nautilus
-    obsidian
+    udiskie
+    vlc
+    wl-clipboard
 )
 sudo pacman -S --needed --noconfirm "${OFFICIAL_PACKAGES[@]}"
 ok "Official packages synchronized."
@@ -110,32 +153,52 @@ CUSTOM_AUR_PACKAGES=(
     typora
     google-chrome
     antigravity
+    antigravity-cli
     antigravity-ide
     claude-desktop-bin
+    espanso-wayland-git
     openai-codex-desktop
+    visual-studio-code-bin
 )
 $AUR_HELPER -S --needed --noconfirm "${CUSTOM_AUR_PACKAGES[@]}"
 ok "AUR packages synchronized."
 
-# ── 5. Deploy Niri Config ─────────────────────────────────────
+# ── 5. Set Default Shell to Bash ────────────────────────────
+header "Setting Default Shell → bash"
+if [ "$(getent passwd "$USER" | cut -d: -f7)" != "/bin/bash" ]; then
+    info "Switching default shell to bash (replacing current: $(getent passwd "$USER" | cut -d: -f7))..."
+    chsh -s /bin/bash
+    ok "Default shell set to bash. Re-login to apply."
+else
+    ok "Default shell is already bash — nothing to do."
+fi
+
+header "Deploying Bash Configs"
+if [ -d "${DOTFILES_DIR}/bash" ]; then
+    [ -f "${DOTFILES_DIR}/bash/.bashrc" ] && deploy_file "${DOTFILES_DIR}/bash/.bashrc" "$HOME/.bashrc"
+    [ -f "${DOTFILES_DIR}/bash/.inputrc" ] && deploy_file "${DOTFILES_DIR}/bash/.inputrc" "$HOME/.inputrc"
+    ok "Bash configuration deployed."
+fi
+
+# ── 6. Deploy Niri Config ─────────────────────────────────────
 header "Deploying Niri Config → ~/.config/niri"
 deploy_file "${DOTFILES_DIR}/niri/config.kdl"    "$HOME/.config/niri/config.kdl"
-deploy_dir  "${DOTFILES_DIR}/niri/cfg"            "$HOME/.config/niri/cfg"
+deploy_niri_cfg "${DOTFILES_DIR}/niri/cfg"        "$HOME/.config/niri/cfg"
 ok "Niri configuration deployed."
 
-# ── 6. Deploy GTK Theming ─────────────────────────────────────
+# ── 7. Deploy GTK Theming ─────────────────────────────────────
 header "Deploying GTK3/4 Decoration Settings"
 deploy_file "${DOTFILES_DIR}/gtk-3.0/settings.ini"  "$HOME/.config/gtk-3.0/settings.ini"
 deploy_file "${DOTFILES_DIR}/gtk-4.0/settings.ini"  "$HOME/.config/gtk-4.0/settings.ini"
 ok "GTK decoration layout applied (minimize, maximize, close)."
 
-# ── 7. Deploy Noctalia Shell Config ───────────────────────────
+# ── 8. Deploy Noctalia Shell Config ───────────────────────────
 header "Deploying Noctalia Shell Config → ~/.config/noctalia"
 deploy_file "${DOTFILES_DIR}/noctalia/settings.json"  "$HOME/.config/noctalia/settings.json"
 deploy_file "${DOTFILES_DIR}/noctalia/plugins.json"   "$HOME/.config/noctalia/plugins.json"
 ok "Noctalia shell configuration deployed."
 
-# ── 8. Deploy Custom Quickshell Layouts ────────────────────────
+# ── 9. Deploy Custom Quickshell Layouts ────────────────────────
 header "Deploying Custom Quickshell Layouts → ~/.config/quickshell"
 if [ ! -d "$HOME/.config/quickshell/noctalia-shell" ]; then
     info "Copying system noctalia-shell config to local home..."
@@ -146,14 +209,26 @@ deploy_file "${DOTFILES_DIR}/quickshell/noctalia-shell/Modules/Panels/Launcher/L
             "$HOME/.config/quickshell/noctalia-shell/Modules/Panels/Launcher/LauncherCore.qml"
 ok "Custom quickshell layouts deployed."
 
-# ── 9. System skel (optional) ─────────────────────────────────
+# ── 10. System skel (optional) ────────────────────────────────
 echo ""
 read -p "Copy setup to /etc/skel for new users? [y/N] " -n 1 -r; echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     header "Deploying to /etc/skel"
     sudo mkdir -p /etc/skel/.config/niri/cfg
     sudo cp -r "$HOME/.config/niri/config.kdl"  /etc/skel/.config/niri/
-    sudo cp -r "$HOME/.config/niri/cfg/"*        /etc/skel/.config/niri/cfg/
+    for f in "$HOME/.config/niri/cfg/"*; do
+        if [ "$(basename "$f")" = "display.kdl" ]; then
+            warn "Skipping /etc/skel display.kdl; monitor/output config is machine-specific."
+            continue
+        fi
+
+        sudo cp "$f" /etc/skel/.config/niri/cfg/
+    done
+    sudo tee /etc/skel/.config/niri/cfg/display.kdl >/dev/null <<'EOF'
+// Local monitor/output configuration.
+// This file is intentionally not overwritten by install.sh.
+// Run `niri msg outputs` and add machine-specific output rules here if needed.
+EOF
     sudo mkdir -p /etc/skel/.config/gtk-3.0 /etc/skel/.config/gtk-4.0
     sudo cp "$HOME/.config/gtk-3.0/settings.ini" /etc/skel/.config/gtk-3.0/
     sudo cp "$HOME/.config/gtk-4.0/settings.ini" /etc/skel/.config/gtk-4.0/
@@ -162,10 +237,12 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     sudo cp "$HOME/.config/noctalia/plugins.json"  /etc/skel/.config/noctalia/
     sudo mkdir -p /etc/skel/.config/quickshell
     sudo cp -r "$HOME/.config/quickshell/noctalia-shell" /etc/skel/.config/quickshell/
+    [ -f "$HOME/.bashrc" ] && sudo cp "$HOME/.bashrc" /etc/skel/
+    [ -f "$HOME/.inputrc" ] && sudo cp "$HOME/.inputrc" /etc/skel/
     ok "Copied to /etc/skel."
 fi
 
-# ── 10. Live Reload Configs ────────────────────────────────────
+# ── 11. Live Reload Configs ────────────────────────────────────
 if [ -n "${NIRI_SOCKET:-}" ] || pgrep -x niri &>/dev/null; then
     header "Reloading Niri"
     niri msg action load-config-file || true

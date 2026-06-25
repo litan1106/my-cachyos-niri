@@ -59,12 +59,20 @@ chmod +x install.sh
 ### What the installer does automatically:
 1. **Verifies system compatibility** (expects Arch Linux / CachyOS).
 2. **Detects or installs `yay`** as the AUR helper.
-3. **Synchronizes core packages** via `pacman` (Niri, Noctalia Shell, Alacritty, Tmux, etc.).
+3. **Synchronizes user packages** via `pacman` (Alacritty, udiskie automounting, Wayland clipboard history, etc.).
 4. **Synchronizes customized helper packages** via `yay` (Google Chrome, Typora, Antigravity, Antigravity IDE, Claude Desktop, and Codex Desktop).
-5. **Safely deploys Niri configurations** from `dotfiles/niri/` to `~/.config/niri/` (creating a timestamped backup of any existing configuration first).
+5. **Safely deploys Niri configurations** from `dotfiles/niri/` to `~/.config/niri/` (creating a timestamped backup of any existing configuration first), while leaving monitor/output config local to each machine.
 6. **Deploys GTK window buttons** (`gtk-3.0` and `gtk-4.0` settings) so you instantly get **Minimize, Maximize, and Close** buttons on all your window titlebars.
 7. **Optionally updates `/etc/skel/`** (requires sudo) so any new users created on the system automatically inherit this setup.
 8. **Live-reloads Niri** if it is currently running, applying your settings instantly.
+
+> **Monitor note**: `niri/cfg/display.kdl` is intentionally not installed or overwritten by `install.sh`, because display names, refresh rates, scaling, and positions are machine-specific. After install, run `niri msg outputs` on each machine and edit `~/.config/niri/cfg/display.kdl` locally if you need explicit monitor rules.
+
+> **Input note**: `niri/cfg/input.kdl` is gitignored — it contains device-specific settings (keyboard layout, mouse/touchpad sensitivity) that differ per machine. After install, apply these recommended tweaks manually in `~/.config/niri/cfg/input.kdl`:
+> - **Disable `focus-follows-mouse`** — comment it out so windows don't resize/refocus as you hover; focus only changes on click. Without this, moving the mouse over any window instantly shifts focus and causes the active column to resize.
+>   ```kdl
+>   // focus-follows-mouse
+>   ```
 
 ---
 
@@ -93,14 +101,11 @@ Resolve any conflicts in `niri/cfg/keybinds.kdl` if a key you customised was als
 ### Official / CachyOS Repos (`pacman`)
 | Package | Purpose |
 |---|---|
-| `niri` | Scrollable tiling Wayland compositor |
-| `cachyos-niri-noctalia` | CachyOS Niri + Noctalia defaults |
-| `noctalia-shell` | Wayland desktop shell |
-| `noctalia-qs` | Quickshell fork powering Noctalia |
 | `alacritty` | GPU-accelerated terminal |
-| `tmux` | Terminal multiplexer |
-| `nautilus` | File manager |
+| `cliphist` | Wayland clipboard history backend |
 | `obsidian` | Local markdown knowledge base |
+| `udiskie` | User-session removable drive automounting |
+| `wl-clipboard` | Wayland clipboard command-line tools |
 
 ### AUR Packages (`yay`)
 | Package | Purpose |
@@ -120,6 +125,7 @@ Resolve any conflicts in `niri/cfg/keybinds.kdl` if a key you customised was als
 | Hotkey | Action |
 |---|---|
 | `Super + Space` | App launcher |
+| `Super + V` | Clipboard history |
 | `Super + Alt + Space` | System / session menu |
 | `Super + Escape` | System menu |
 | `Super + Ctrl + L` | Lock screen |
@@ -242,3 +248,56 @@ git pull origin main
 # Deploy the updated configurations live (will automatically backup existing ones and reload Niri)
 ./install.sh
 ```
+
+---
+
+## 🐛 Troubleshooting
+
+### GitHub Desktop won't open (AMD GPU + Wayland / Niri)
+
+**Symptoms**: Running `github-desktop` prints only Fontconfig warnings and a radv notice — no window ever appears.
+
+**Root cause**: GitHub Desktop (Electron/Chromium) tries to use hardware-accelerated EGL via ANGLE for its GPU subprocess. On AMD + Wayland this fails immediately:
+
+```
+eglCreateImage failed with 0x00003009
+OzoneImageBacking::ProduceSkiaGanesh failed to create GL representation
+GPU process exited unexpectedly: exit_code=8704
+```
+
+Chromium retries the GPU process a few times then gives up, and the app exits silently before creating any Wayland surface.
+
+There are two things that can cause the app to not open:
+
+1. **Stale `SingletonLock`** — A previous crashed session leaves lock files that block new launches. New invocations silently signal the dead process and exit immediately.
+2. **EGL/ANGLE crash loop** — Even after the lock is cleared, the GPU process crashes on every start until a workaround is applied.
+
+**Fix (one-time setup)**:
+
+```bash
+# 1. Kill any orphaned github-desktop processes
+pkill -9 -f github-desktop 2>/dev/null
+
+# 2. Remove stale singleton lock files
+rm -f "$HOME/.config/GitHub Desktop/SingletonLock" \
+      "$HOME/.config/GitHub Desktop/SingletonSocket" \
+      "$HOME/.config/GitHub Desktop/SingletonCookie"
+
+# 3. Clear corrupted GPU shader caches
+rm -rf "$HOME/.config/GitHub Desktop/GPUCache" \
+       "$HOME/.config/GitHub Desktop/DawnGraphiteCache" \
+       "$HOME/.config/GitHub Desktop/DawnWebGPUCache" \
+       "$HOME/.config/GitHub Desktop/Code Cache"
+
+# 4. Patch the system launch wrapper to use SwiftShader (software GL)
+#    This bypasses the broken hardware EGL path permanently
+pkexec tee /usr/bin/github-desktop > /dev/null << 'EOF'
+#!/bin/sh
+
+/opt/github-desktop/github-desktop --use-gl=swiftshader "$@"
+EOF
+```
+
+> **Why `--use-gl=swiftshader`?** SwiftShader is ANGLE's CPU-based OpenGL ES renderer bundled inside GitHub Desktop itself (`/opt/github-desktop/libvk_swiftshader.so`). It bypasses the system's EGL/DRM stack entirely, so it is unaffected by AMD driver or Wayland compositor version. Rendering performance is still perfectly adequate for a Git UI.
+
+> **Note**: The patch to `/usr/bin/github-desktop` will be overwritten when the `github-desktop` package is updated via `pacman` / `yay`. Re-run step 4 after each package upgrade if the issue returns.

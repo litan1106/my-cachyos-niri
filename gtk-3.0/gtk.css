@@ -1,0 +1,7 @@
+/* Lock header bar height so focused/unfocused state doesn't cause window resize in niri */
+headerbar,
+.titlebar {
+    min-height: 46px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
