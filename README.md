@@ -34,7 +34,13 @@ dotfiles/
 │   └── noctalia-shell/
 │       └── Modules/Panels/Launcher/
 │           └── LauncherCore.qml  ← Custom Windows-style Start Menu power options layout
-├── install.sh          ← One-shot interactive installer
+├── bash/                ← .bashrc / .inputrc synced by apply.sh
+├── llm/                 ← Local LLM setup notes (llama.cpp, ROCm, …)
+├── package-inventory/   ← inventory.md + pkg-export.sh package audit tooling
+├── scripts/             ← Standalone utility scripts (backups, fixes, SMB setup)
+├── docs/                ← Standalone reference guides (recovery, migration, hotkeys)
+├── install.sh           ← One-shot interactive installer
+├── apply.sh             ← Fast config re-sync without a full reinstall
 └── README.md
 ```
 

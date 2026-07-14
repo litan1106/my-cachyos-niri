@@ -1,4 +1,4 @@
-# Gemma 4 E4B + llama-server for VS Code on AMD RX 9060 XT
+# Qwythos-9B-Claude-Mythos-5-1M-MTP + llama-server for VS Code on AMD RX 9060 XT
 
 ## Hardware Profile
 
@@ -9,17 +9,34 @@
 - OS: CachyOS (Arch-based), kernel 7.1.1-2-cachyos
 - iGPU: gfx1036 (Ryzen integrated, 512 MB - not used for inference)
 
+## Available Quantizations
+
+| File                                                | Approx Size | Notes                                  |
+|-----------------------------------------------------|-------------|----------------------------------------|
+| `Qwythos-9B-Claude-Mythos-5-1M-MTP-Q8_0.gguf`      | ~9.4 GiB    | Highest quality, fits well in 16 GB VRAM |
+| `Qwythos-9B-Claude-Mythos-5-1M-MTP-Q6_K.gguf`      | ~7.3 GiB    | Good quality, more headroom for context  |
+
+With 16 GB VRAM both quants fit comfortably. Q8_0 is recommended for best quality.
+
 ## Benchmark Results (RX 9060 XT)
 
 Measured with `llama-bench -ngl 99 -fa on`:
 
-| Model                   | Size     | Prompt (pp512) | Generation (tg128) |
-|-------------------------|----------|----------------|---------------------|
-| **Gemma 4 E4B Q8_0**   | 7.46 GiB | 3306.04 t/s    | 47.40 t/s           |
-| Qwen3.5 9B Q8_0        | 9.10 GiB | 2121.80 t/s    | 32.00 t/s           |
-| Gemma 4 12B Q4_K_M     | 6.86 GiB | 1264.41 t/s    | 34.06 t/s           |
+| Model                                          | Size      | Prompt (pp512) | Generation (tg128) |
+|------------------------------------------------|-----------|----------------|---------------------|
+| **Qwythos-9B ... Q8_0**                        | ~9.4 GiB  | TBD            | TBD                 |
+| **Qwythos-9B ... Q6_K**                        | ~7.3 GiB  | TBD            | TBD                 |
 
-**Gemma 4 E4B Q8_0 is the best model for this GPU:** 39% faster generation than the 12B, 2.6x faster prompt processing, and near-lossless Q8_0 quality.
+### Run benchmarks
+
+```bash
+HIP_VISIBLE_DEVICES=0 ./build/bin/llama-bench \
+    -hf empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF::Q8_0 \
+    -hf empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF::Q6_K \
+    -ngl 99 \
+    -fa on \
+    -r 1
+```
 
 ## Build Configuration (Verified)
 
@@ -50,9 +67,23 @@ cmake --build build --config Release -j$(nproc)
 
 ## 1. Start llama-server
 
+**Q8_0 (recommended):**
+
 ```bash
 HIP_VISIBLE_DEVICES=0 ./build/bin/llama-server \
-    -hf ggml-org/gemma-4-E4B-it-GGUF:Q8_0 \
+    -hf empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF::Q8_0 \
+    -ngl 99 \
+    -fa on \
+    -c 32768 \
+    --host 127.0.0.1 \
+    --port 8012
+```
+
+**Q6_K (more context headroom):**
+
+```bash
+HIP_VISIBLE_DEVICES=0 ./build/bin/llama-server \
+    -hf empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF::Q8_0 \
     -ngl 99 \
     -fa on \
     -c 32768 \
@@ -107,21 +138,22 @@ Use the llama-vscode chat panel (Ctrl+Shift+M or click status bar) to ask questi
 
 ## 5. Run as a systemd User Service (Optional)
 
-Create a service so llama-server starts automatically:
+Create a service so llama-server starts automatically. Swap in Q6_K if you want
+more VRAM headroom for longer contexts.
 
 ```bash
 mkdir -p ~/.config/systemd/user
 
 cat > ~/.config/systemd/user/llama-server.service << 'EOF'
 [Unit]
-Description=llama.cpp server (Gemma 4 E4B Q8_0)
+Description=llama.cpp server (Qwythos-9B Q8_0)
 After=default.target
 
 [Service]
 Type=simple
 Environment=HIP_VISIBLE_DEVICES=0
 ExecStart=%h/Projects/llama_cpp/build/bin/llama-server \
-    -hf ggml-org/gemma-4-E4B-it-GGUF:Q8_0 \
+    -hf empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF::Q8_0 \
     -ngl 99 \
     -fa on \
     -c 32768 \
@@ -147,33 +179,48 @@ journalctl --user -u llama-server -f
 
 ## 6. Thinking Mode
 
-For reasoning tasks, use thinking mode by starting the system prompt with `<|think|>`:
+If the model supports extended reasoning, consult the model card for the correct
+trigger token or system prompt syntax:
 
 ```bash
 curl http://127.0.0.1:8012/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [
-      {"role": "system", "content": "<|think|>\nYou are a helpful coding assistant."},
+      {"role": "system", "content": "You are a helpful coding assistant."},
       {"role": "user", "content": "Write a binary search in Rust."}
     ],
-    "temperature": 1.0,
-    "top_p": 0.95,
-    "top_k": 64
+    "temperature": 0.7,
+    "top_p": 0.9
   }'
 ```
 
 ## Context Length vs VRAM Budget
 
-With E4B Q8_0 (~8.5 GB weights) and flash attention enabled:
+With flash attention enabled, KV cache overhead is reduced. 16 GB VRAM gives
+good headroom for long contexts with either quant.
+
+**Q8_0 (~9.4 GiB weights):**
 
 | Context Length | Estimated Total VRAM | Status      |
 |----------------|----------------------|-------------|
-| 8K tokens      | ~9.0 GB              | Comfortable |
-| 16K tokens     | ~9.5 GB              | Comfortable |
-| 32K tokens     | ~10.5 GB             | Good        |
-| 65K tokens     | ~12.5 GB             | OK          |
+| 8K tokens      | ~10.0 GB             | Comfortable |
+| 16K tokens     | ~10.5 GB             | Comfortable |
+| 32K tokens     | ~11.5 GB             | Good        |
+| 65K tokens     | ~13.5 GB             | OK          |
 | 128K tokens    | ~16+ GB              | At limit    |
+
+**Q6_K (~7.3 GiB weights):**
+
+| Context Length | Estimated Total VRAM | Status      |
+|----------------|----------------------|-------------|
+| 8K tokens      | ~8.0 GB              | Comfortable |
+| 32K tokens     | ~9.5 GB              | Good        |
+| 128K tokens    | ~14 GB               | OK          |
+| 256K+ tokens   | ~16+ GB              | Monitor     |
+
+The 1M context window in the model name reflects training context, not a
+practical VRAM limit. Start with `-c 32768` and increase carefully.
 
 ## Runtime Flag Reference
 
@@ -184,7 +231,4 @@ With E4B Q8_0 (~8.5 GB weights) and flash attention enabled:
 | `-c 32768`         | 32768       | 32K context window                                     |
 | `--host 127.0.0.1` | 127.0.0.1   | Listen on localhost only                               |
 | `--port 8012`      | 8012        | Default port for llama-vscode                          |
-| `--temp 1.0`       | 1.0         | Google recommended sampling temperature                |
-| `--top-p 0.95`     | 0.95        | Google recommended nucleus sampling                    |
-| `--top-k 64`       | 64          | Google recommended top-k sampling                      |
-| `-hf`              | repo:quant  | Auto-download from HuggingFace                         |
+| `-m`               | /path/file  | Load a local .gguf model file                          |
