@@ -54,7 +54,7 @@ cd ~/.config/niri-omarchy
 ### Step 3: Network File Sharing (Optional)
 If you need to share files over the local network via Samba (SMB), you can run the included helper script to automatically configure Avahi (mDNS), WSDD (Windows discovery), and UFW firewall rules:
 ```bash
-sudo ./setup_smb_discovery.sh
+sudo ./scripts/setup_smb_discovery.sh
 ```
 
 ---
