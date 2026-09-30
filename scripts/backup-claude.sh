@@ -22,8 +22,8 @@
 #   RTK.md            Token-optimization CLI proxy reference
 #   settings.json     Hooks, effort level, theme, default agent model
 #   keybindings.json  Custom keyboard shortcut bindings
-#   agents/           Custom subagent definitions
-#   skills/           Custom skill definitions
+#   agents/           Custom subagent definitions (deep-reasoner, fast-worker)
+#   skills/           Custom + superpowers-adapted skills (9 Fable-workflow skills)
 #   rules/            Rule packs (e.g. the ecc/ ruleset)
 #   hooks/            PreToolUse/PostToolUse/Stop hook scripts
 #   mcp-configs/      MCP server configuration
@@ -89,8 +89,8 @@ BACKUP_TARGETS=(
   "RTK.md"           # Token-optimization CLI proxy reference
   "settings.json"    # Hooks, effort level, theme, default agent model
   "keybindings.json" # Custom keyboard shortcut bindings
-  "agents"           # Custom subagent definitions
-  "skills"           # Custom skill definitions
+  "agents"           # Custom subagent definitions (deep-reasoner, fast-worker)
+  "skills"           # Custom + superpowers-adapted skills (9 Fable-workflow skills)
   "rules"            # Rule packs (e.g. the ecc/ ruleset)
   "hooks"            # PreToolUse/PostToolUse/Stop hook scripts
   "mcp-configs"       # MCP server configuration
