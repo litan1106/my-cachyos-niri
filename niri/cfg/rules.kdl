@@ -20,3 +20,43 @@
         match namespace="^noctalia-wallpaper*"
         place-within-backdrop true
     }
+
+    // ── Battle.net (Proton / umu-launcher) ───────────────────────────────────
+    // Ported from omarchy default/hypr/apps/battlenet.lua (Hyprland).
+    //
+    // !!! MATCHERS ARE A BEST GUESS — VERIFY AT RUNTIME !!!
+    // Under niri + umu-launcher (NOT Steam's Proton), the Hyprland class
+    // `steam_app_battlenet` is NOT the niri app-id. The real app-id is unknown
+    // until Battle.net actually runs. After first launch, inspect the live
+    // windows and correct the matchers below:
+    //     niri msg windows
+    //     niri msg --json windows
+    // Window titles tend to be more stable than app-id across the Proton wrapper,
+    // so these rules match on title; an app-id match is left commented as a
+    // template to swap in once the real app-id is known.
+
+    // Launcher window: float + center at ~1280x800.
+    // niri centers floating windows on open by default, so `open-floating true`
+    // reproduces Hyprland's center=true; size comes from the default-*-width/height.
+    window-rule {
+        match title=r#"^Battle\.net$"#
+        // match app-id=r#"^steam_app_battlenet$"#  // TEMPLATE — replace with real app-id from `niri msg windows`
+        open-floating true
+        default-column-width { fixed 1280; }
+        default-window-height { fixed 800; }
+    }
+
+    // Installer window ("Battle.net Setup"): drop WM chrome.
+    // Hyprland did: decorate=false + no_blur + no_shadow.
+    //   - decorate=false  -> border { off } + focus-ring { off }
+    //   - no_shadow       -> shadow { off }
+    //   - no_blur         -> OMITTED: niri has no window blur, so there is no
+    //                        equivalent to drop. Nothing to configure.
+    window-rule {
+        match title=r#"^Battle\.net Setup$"#
+        // match app-id=r#"^steam_app_battlenet$"#  // TEMPLATE — replace with real app-id from `niri msg windows`
+        border { off; }
+        focus-ring { off; }
+        shadow { off; }
+        draw-border-with-background false
+    }
