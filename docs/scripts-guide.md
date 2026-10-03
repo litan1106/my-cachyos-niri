@@ -1,6 +1,6 @@
 # Scripts Guide
 
-Reference for every script in [`scripts/`](../scripts/) — one-shot utilities for backing up dev-tool configs (Antigravity CLI, Claude Code, Zed), recovering the Antigravity IDE launcher, fixing an AMD GPU monitor-wake bug, and setting up SMB/mDNS network discovery. These are standalone; none are wired into `install.sh` or `apply.sh`, so run them directly when needed.
+Reference for every script in [`scripts/`](../scripts/) — one-shot utilities for backing up dev-tool configs (Antigravity CLI, Claude Code, Zed), recovering the Antigravity IDE launcher, fixing an AMD GPU monitor-wake bug, setting up SMB/mDNS network discovery, and installing/managing gaming platforms (Battle.net, Lutris). These are standalone; none are wired into `install.sh` or `apply.sh`, so run them directly when needed.
 
 ## Table of Contents
 
@@ -10,6 +10,13 @@ Reference for every script in [`scripts/`](../scripts/) — one-shot utilities f
 4. [backup-zed.sh](#backup-zedsh)
 5. [fix-monitor-wake.sh](#fix-monitor-wakesh)
 6. [setup_smb_discovery.sh](#setup_smb_discoverysh)
+7. [install-gaming-battlenet.sh](#install-gaming-battlenetsh)
+8. [launch-battlenet.sh](#launch-battlenetsh)
+9. [remove-gaming-battlenet.sh](#remove-gaming-battlenetsh)
+10. [install-gaming-lutris.sh](#install-gaming-lutrissh)
+11. [remove-gaming-lutris.sh](#remove-gaming-lutrissh)
+12. [install-gpu-lib32.sh](#install-gpu-lib32sh)
+13. [setup-local-bin-path.sh](#setup-local-bin-pathsh)
 
 ---
 
@@ -209,3 +216,184 @@ Exits 1 immediately if not run as root.
 - Does not check whether `ufw` is installed/enabled before calling `ufw allow`/`ufw reload` — if you don't use `ufw`, adapt the firewall section to your setup (`firewalld`, `nftables`, etc.) before running.
 - Sets `security = user` and `map to guest = bad user` — shares fall back to guest access for unrecognized users; review `[homes]`/`[printers]` permissions if this is a multi-user or untrusted-network machine.
 - Runs `pacman -S --noconfirm`, so it will install/upgrade packages without prompting.
+
+---
+
+## install-gaming-battlenet.sh
+
+**Purpose**: Installs Battle.net as a standalone Windows application via umu-launcher and GE-Proton, without Steam, Lutris, or Heroic. The script downloads the official Battle.net installer, sets up a Wine prefix at `~/Games/battlenet`, and installs a launch script to `~/.local/bin/launch-battlenet` with a desktop entry.
+
+**Usage**:
+```bash
+./install-gaming-battlenet.sh
+```
+
+**What it does**:
+1. Installs `umu-launcher` via `pacman` (it's in the `cachyos` sync repo).
+2. Auto-detects the GPU vendor(s) via `lspci` and installs the matching lib32 graphics drivers through the shared [install-gpu-lib32.sh](#install-gpu-lib32sh) helper — `lib32-vulkan-radeon` (AMD), `lib32-vulkan-intel` (Intel), and/or `lib32-nvidia-utils` (NVIDIA), plus `lib32-mesa` always.
+3. Checks for a partial/failed Battle.net installation at `~/Games/battlenet` and prompts to wipe it if detected (the installer is not idempotent and cannot resume).
+4. Creates the Wine prefix directory if it doesn't exist.
+5. Downloads the official Battle.net installer from Blizzard's server into `~/.cache/cachyos-gaming/Battle.net-Setup.exe`.
+6. Launches the installer via `umu-run` in the background, which opens the Battle.net setup wizard (standard Windows installer; click through normally).
+7. Installs the `launch-battlenet` script to `~/.local/bin/launch-battlenet` (requires `~/.local/bin` on `$PATH`).
+8. Installs a desktop entry to `~/.local/share/applications/battlenet.desktop` and updates the desktop database.
+
+**Prerequisites**: `sudo` access (packages install via `pacman` from the CachyOS/Arch sync repos — multilib must be enabled for the lib32 drivers, which is the CachyOS default); any AMD/Intel/NVIDIA GPU (the correct lib32 driver is auto-detected); `~/.local/bin` must be on `$PATH` for the launcher command to resolve — run [setup-local-bin-path.sh](#setup-local-bin-pathsh) once.
+
+**Warnings**:
+- The installer runs in the background and logs to `/tmp/battlenet-installer.log` — it does **not** block the script's completion. The script prints instructions for launching Battle.net after installation finishes (which may take several minutes).
+- If a partial prefix is detected (directory exists but `Launcher.exe` is missing), the script will ask for confirmation to wipe it before proceeding. This is necessary because Battle.net's installer cannot resume from a partial state.
+- GE-Proton is auto-fetched and cached by umu-launcher on first launch; no manual download is needed.
+- A niri window rule for Battle.net lives in `niri/cfg/rules.kdl` — its matchers may need verification after the first launch to ensure proper window handling.
+
+---
+
+## launch-battlenet.sh
+
+**Purpose**: Launches the installed Battle.net client via umu-launcher and GE-Proton, with optional MangoHud performance overlay for in-game FPS monitoring and logging.
+
+**Usage**:
+```bash
+launch-battlenet                 # standard launch
+launch-battlenet --with-mangohud # launch with MangoHud overlay
+launch-battlenet --help          # show help
+```
+
+**What it does**:
+1. Verifies that Battle.net is installed at `~/Games/battlenet` (checks for `Launcher.exe`).
+2. Sets up Wine/Proton environment variables (`WINEPREFIX`, `PROTONPATH=GE-Proton`, `GAMEID=umu-battlenet`, `PROTON_VERB=run`).
+3. If `--with-mangohud` is passed, adds `MANGOHUD=1` to the environment to enable the MangoHud overlay.
+4. Invokes `umu-run` with the Battle.net launcher executable.
+
+**Prerequisites**: Battle.net must be installed via `install-gaming-battlenet.sh` first; `umu-launcher` must be installed; `~/.local/bin` must be on `$PATH`.
+
+**Warnings**:
+- MangoHud (when enabled) displays an FPS overlay and logs performance metrics to `~/mangohud/` as CSV files. Toggle it in-game with `Shift_L+F2`.
+- The launcher script does not validate GE-Proton availability — umu-launcher will fetch it on first use if missing.
+
+---
+
+## remove-gaming-battlenet.sh
+
+**Purpose**: Uninstalls Battle.net, its Wine prefix, all installed games, and associated desktop entries. Optionally removes umu-launcher and cached GE-Proton runtimes if they are not needed.
+
+**Usage**:
+```bash
+./remove-gaming-battlenet.sh
+```
+
+**What it does**:
+1. Kills any running processes tied to the Battle.net prefix (`~/Games/battlenet`).
+2. Removes the Wine prefix directory at `~/Games/battlenet` (all installed games and Battle.net client).
+3. Removes the launcher script at `~/.local/bin/launch-battlenet`.
+4. Removes the desktop entry at `~/.local/share/applications/battlenet.desktop` and updates the desktop database.
+5. Removes the cached installer at `~/.cache/cachyos-gaming/Battle.net-Setup.exe`.
+6. Prompts whether to also remove `umu-launcher` (used only by Battle.net in this setup).
+7. Prompts whether to also remove GE-Proton runtimes cached at `~/.local/share/Steam/compatibilitytools.d/GE-Proton*` and `~/.local/share/umu`.
+
+**Prerequisites**: None; the script handles cases where Battle.net or its components are not fully installed.
+
+**Warnings**:
+- This script **permanently deletes** the Battle.net prefix and all installed games — there is no undo.
+- Prompts are non-interactive `[y/N]` (default is No) for `umu-launcher` and GE-Proton removal; answer `y` or `Y` to proceed.
+
+---
+
+## install-gaming-lutris.sh
+
+**Purpose**: Installs Lutris gaming platform along with Wine and runtime dependencies (wine-staging, wine-mono, wine-gecko, winetricks), AMD lib32 graphics drivers, and umu-launcher. Also patches the Lutris shebang for machines where `python3` is managed by mise (a version manager), ensuring Lutris can import its Python modules correctly.
+
+**Usage**:
+```bash
+./install-gaming-lutris.sh
+```
+
+**What it does**:
+1. Installs Lutris and its dependencies via `pacman` (all in the CachyOS/Arch sync repos; `--needed` makes the already-installed `lutris` a no-op): `lutris`, `umu-launcher`, `wine-staging`, `wine-mono`, `wine-gecko`, `winetricks`, `python-protobuf`.
+2. Auto-detects the GPU vendor(s) via `lspci` and installs the matching lib32 graphics drivers through the shared [install-gpu-lib32.sh](#install-gpu-lib32sh) helper — `lib32-vulkan-radeon` (AMD), `lib32-vulkan-intel` (Intel), and/or `lib32-nvidia-utils` (NVIDIA), plus `lib32-mesa` always.
+3. **Detects mise-managed Python**: Checks if Lutris's shebang line points to `#!/usr/bin/env python3` and if `python3` resolves through a mise shim. If detected, patches the shebang in `/usr/bin/lutris` to `#!/bin/python3` (the system Python) instead, bypassing the mise shim so the lutris module can be imported.
+4. Launches Lutris in the background, which begins auto-fetching DXVK and VKD3D runtimes (watch the status bar at the bottom of the Lutris window).
+5. Prints instructions to add or install games once the runtimes finish downloading.
+
+**Prerequisites**: `sudo` access (packages install via `pacman`; multilib must be enabled for the lib32 drivers — the CachyOS default); any AMD/Intel/NVIDIA GPU (the correct lib32 driver is auto-detected via the shared [install-gpu-lib32.sh](#install-gpu-lib32sh) helper).
+
+**Environment variables**: None explicitly used, but the script detects the presence of `mise` in the `python3` path.
+
+**Warnings**:
+- The shebang patch only runs if `python3` is detected as mise-managed; on systems without mise, this step is skipped.
+- Lutris auto-fetches runtimes in the background on first launch — the process runs in parallel with the script's completion, so you may need to wait for the status bar to show 100% before launching games.
+- The script opens Lutris immediately after install; you can close it and re-open later if needed.
+
+---
+
+## remove-gaming-lutris.sh
+
+**Purpose**: Uninstalls Lutris and all associated gaming dependencies (Wine, winetricks, umu-launcher) along with configuration and cache directories.
+
+**Usage**:
+```bash
+./remove-gaming-lutris.sh
+```
+
+**What it does**:
+1. Checks which of the following packages are installed and removes them via `sudo pacman -Rns --noconfirm`: `lutris`, `wine-staging`, `wine-mono`, `wine-gecko`, `winetricks`, `python-protobuf`, `umu-launcher`.
+2. Removes Lutris configuration and cache directories: `~/.config/lutris`, `~/.local/share/lutris`, `~/.cache/lutris`.
+3. Removes umu-launcher and Wine directories: `~/.local/share/umu`, `~/.cache/umu`, `~/.wine`, `~/.cache/wine`, `~/.cache/winetricks`.
+4. Prints a confirmation message listing what was removed.
+
+**Prerequisites**: `pacman` (Arch/CachyOS); `sudo` access.
+
+**Warnings**:
+- This script **permanently deletes** all Lutris configurations, game prefixes, installed games, and Wine caches — there is no undo.
+- Runs `pacman -Rns --noconfirm`, so package removal is automatic without prompts.
+
+---
+
+## install-gpu-lib32.sh
+
+**Purpose**: Detects the GPU vendor(s) via `lspci` and installs the matching 32-bit (lib32) graphics drivers needed for Wine/Proton gaming. Shared helper sourced by both gaming installers so the same scripts work on AMD, Intel, and NVIDIA machines — including multi-GPU setups (e.g. an Intel iGPU + NVIDIA dGPU laptop). Can also be run standalone.
+
+**Usage**:
+```bash
+./install-gpu-lib32.sh        # standalone
+# or, from another script:
+source ./install-gpu-lib32.sh && install_gpu_lib32
+```
+
+**What it does**:
+1. Installs `pciutils` if `lspci` is missing.
+2. Always queues `lib32-mesa` (shared 32-bit OpenGL/Vulkan loader bits).
+3. Adds `lib32-vulkan-radeon` if an AMD GPU is found, `lib32-vulkan-intel` for Intel, and `lib32-nvidia-utils` for NVIDIA (proprietary driver — swap for `lib32-vulkan-nouveau` on a nouveau-only setup).
+4. Deduplicates the list and installs it with `sudo pacman -S --needed --noconfirm`.
+5. If no AMD/Intel/NVIDIA GPU is identified (e.g. a VM), installs `lib32-mesa` only and prints a warning to install the vendor driver manually.
+
+**Prerequisites**: `sudo` access; `[multilib]` enabled in `/etc/pacman.conf` (CachyOS default). The AMD matcher is anchored (`amd` / `advanced micro devices` / `ati technologies`) so it does not false-match the "ati" substring inside "VGA comp**ati**ble controller".
+
+**Warnings**:
+- Assumes the proprietary NVIDIA driver for NVIDIA GPUs; nouveau users should edit the script.
+
+---
+
+## setup-local-bin-path.sh
+
+**Purpose**: Puts `~/.local/bin` on `PATH` the best-practice way for a systemd-managed niri session (the model CachyOS uses: SDDM → `niri-session` → `systemd --user`). Without this, user-installed launchers such as `launch-battlenet` don't resolve by name, because CachyOS/Arch only add `/usr/local/bin` to `PATH` by default.
+
+> `install-gaming-battlenet.sh` **sources and runs this automatically** (it's the only installer that puts a command in `~/.local/bin`), so you normally don't need to run it by hand. Run it standalone only to add the `--with-bashrc` fallback, or on a machine where you want `~/.local/bin` on PATH independent of the gaming scripts.
+
+**Usage**:
+```bash
+./setup-local-bin-path.sh                # environment.d only (niri + GUI + in-niri terminals)
+./setup-local-bin-path.sh --with-bashrc  # also add a ~/.bashrc fallback for TTY/SSH sessions
+```
+
+**What it does**:
+1. Ensures `~/.local/bin` exists.
+2. Warns if `/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator` is missing (meaning the session isn't systemd-managed and `environment.d` won't be honored).
+3. Writes `~/.config/environment.d/10-local-bin.conf` with `PATH=${HOME}/.local/bin:${PATH}`. This is read by the systemd user manager at login and reaches niri, every app launched from the menu, and terminals opened inside niri (they inherit the session environment). Overwriting is idempotent — the file *is* the desired state.
+4. With `--with-bashrc`, appends a duplicate-guarded `export PATH` to `~/.bashrc` for bare TTY / SSH shells, which don't inherit the graphical session environment.
+
+**Prerequisites**: A systemd-managed Wayland session (niri via `niri-session`, the CachyOS default). `bash` for the optional `--with-bashrc` fallback.
+
+**Warnings**:
+- `environment.d` applies on the **next re-login** (the user manager reads it at session start). For the current terminal, run `export PATH="$HOME/.local/bin:$PATH"` once.
+- Idempotent and safe to re-run, including on a second machine.
