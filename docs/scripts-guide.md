@@ -1,6 +1,6 @@
 # Scripts Guide
 
-Reference for every script in [`scripts/`](../scripts/) — one-shot utilities for backing up dev-tool configs (Antigravity CLI, Claude Code, Zed), recovering the Antigravity IDE launcher, fixing an AMD GPU monitor-wake bug, setting up SMB/mDNS network discovery, and installing/managing gaming platforms (Battle.net, Lutris). These are standalone; none are wired into `install.sh` or `apply.sh`, so run them directly when needed.
+Reference for every script in [`scripts/`](../scripts/) — one-shot utilities for backing up dev-tool configs (Antigravity CLI, Claude Code, Zed), recovering the Antigravity IDE launcher, fixing an AMD GPU monitor-wake bug, setting up SMB/mDNS network discovery, and installing/managing gaming platforms (Battle.net, Hearthstone Deck Tracker, Lutris). These are standalone; none are wired into `install.sh` or `apply.sh`, so run them directly when needed.
 
 ## Table of Contents
 
@@ -13,10 +13,13 @@ Reference for every script in [`scripts/`](../scripts/) — one-shot utilities f
 7. [install-gaming-battlenet.sh](#install-gaming-battlenetsh)
 8. [launch-battlenet.sh](#launch-battlenetsh)
 9. [remove-gaming-battlenet.sh](#remove-gaming-battlenetsh)
-10. [install-gaming-lutris.sh](#install-gaming-lutrissh)
-11. [remove-gaming-lutris.sh](#remove-gaming-lutrissh)
-12. [install-gpu-lib32.sh](#install-gpu-lib32sh)
-13. [setup-local-bin-path.sh](#setup-local-bin-pathsh)
+10. [install-gaming-hdt.sh](#install-gaming-hdtsh)
+11. [launch-hdt.sh](#launch-hdtsh)
+12. [remove-gaming-hdt.sh](#remove-gaming-hdtsh)
+13. [install-gaming-lutris.sh](#install-gaming-lutrissh)
+14. [remove-gaming-lutris.sh](#remove-gaming-lutrissh)
+15. [install-gpu-lib32.sh](#install-gpu-lib32sh)
+16. [setup-local-bin-path.sh](#setup-local-bin-pathsh)
 
 ---
 
@@ -296,6 +299,79 @@ launch-battlenet --help          # show help
 **Warnings**:
 - This script **permanently deletes** the Battle.net prefix and all installed games — there is no undo.
 - Prompts are non-interactive `[y/N]` (default is No) for `umu-launcher` and GE-Proton removal; answer `y` or `Y` to proceed.
+
+---
+
+## install-gaming-hdt.sh
+
+**Purpose**: Installs [Hearthstone Deck Tracker](https://hsdecktracker.net/) (HDT) **into the existing Battle.net Proton prefix** (`~/Games/battlenet`). HDT only tracks a Hearthstone install that lives in the same Wine prefix — that's how it reads the game's log files and overlays it — so this reuses the Battle.net prefix rather than creating a separate one. No Lutris and no extra wine prefix involved.
+
+**Usage**:
+```bash
+./install-gaming-hdt.sh
+```
+
+**What it does**:
+1. Verifies the Battle.net prefix exists (`Battle.net Launcher.exe` present); exits with guidance if not.
+2. Warns (but continues) if Hearthstone isn't installed in the prefix yet — HDT can't track anything until it is.
+3. Installs `winetricks`, `cabextract`, `unzip`, `curl` via `pacman` (`--needed`).
+4. Installs **.NET Framework 4.8** into the prefix using GE-Proton's own `wine` build (auto-detected under `~/.local/share/Steam/compatibilitytools.d/GE-Proton*`). Idempotent — skips if `dotnet48` is already recorded in the prefix's `winetricks.log`.
+5. Downloads the latest HDT portable zip from GitHub (`HearthSim/Hearthstone-Deck-Tracker`) into `~/.cache/cachyos-gaming/`.
+6. Extracts it into the prefix at `~/Games/battlenet/drive_c/Hearthstone Deck Tracker/`.
+7. Installs the `launch-hdt` script to `~/.local/bin/launch-hdt` and a desktop entry to `~/.local/share/applications/hdt.desktop`.
+
+**Prerequisites**: Battle.net installed via [install-gaming-battlenet.sh](#install-gaming-battlenetsh) **and Hearthstone installed through it** (needs your Blizzard login — launch Battle.net with `launch-battlenet`); GE-Proton already fetched by umu (happens on first Battle.net launch); `sudo` access.
+
+**Warnings**:
+- The .NET 4.8 install takes several minutes and a few Wine dialogs may flash by — let it run unattended.
+- HDT only tracks the Hearthstone that lives in this same prefix. Install HDT *after* Hearthstone, and start Hearthstone before HDT.
+
+---
+
+## launch-hdt.sh
+
+**Purpose**: Launches Hearthstone Deck Tracker via umu-launcher and GE-Proton in the Battle.net prefix, so it can attach to the running Hearthstone.
+
+**Usage**:
+```bash
+launch-hdt                 # standard launch
+launch-hdt --with-mangohud # launch with MangoHud overlay
+launch-hdt --help          # show help
+```
+
+**What it does**:
+1. Verifies HDT is installed at `~/Games/battlenet/drive_c/Hearthstone Deck Tracker/`.
+2. Sets the Wine/Proton environment (`WINEPREFIX`, `PROTONPATH=GE-Proton`, `GAMEID=umu-battlenet`, `PROTON_VERB=run`) — the same prefix/GAMEID as Battle.net.
+3. Optionally adds `MANGOHUD=1` with `--with-mangohud`.
+4. Invokes `umu-run` with the HDT executable.
+
+**Prerequisites**: HDT installed via `install-gaming-hdt.sh`; `umu-launcher` installed; `~/.local/bin` on `$PATH`. Start Hearthstone (`launch-battlenet` → launch Hearthstone) first so HDT can detect it.
+
+**Warnings**:
+- If HDT can't find Hearthstone automatically, point it at the Hearthstone folder *inside the prefix* (e.g. `C:\Program Files (x86)\Hearthstone`).
+
+---
+
+## remove-gaming-hdt.sh
+
+**Purpose**: Removes Hearthstone Deck Tracker — its files inside the Battle.net prefix, the launcher, and the desktop entry — while leaving the Battle.net prefix and its .NET runtime intact (both are shared with Battle.net/Hearthstone).
+
+**Usage**:
+```bash
+./remove-gaming-hdt.sh
+```
+
+**What it does**:
+1. Kills any running `Hearthstone Deck Tracker.exe` process.
+2. Removes `~/Games/battlenet/drive_c/Hearthstone Deck Tracker/`.
+3. Removes the launcher at `~/.local/bin/launch-hdt`.
+4. Removes the desktop entry at `~/.local/share/applications/hdt.desktop` and updates the desktop database.
+5. Removes the cached HDT zip(s) from `~/.cache/cachyos-gaming/`.
+
+**Prerequisites**: None.
+
+**Warnings**:
+- Leaves the Battle.net prefix and the .NET runtime in place on purpose — they belong to Battle.net/Hearthstone. Use [remove-gaming-battlenet.sh](#remove-gaming-battlenetsh) to remove those.
 
 ---
 
