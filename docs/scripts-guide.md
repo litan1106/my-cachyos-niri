@@ -1,6 +1,6 @@
 # Scripts Guide
 
-Reference for every script in [`scripts/`](../scripts/) — one-shot utilities for backing up dev-tool configs (Antigravity CLI, Claude Code, Zed), recovering the Antigravity IDE launcher, fixing an AMD GPU monitor-wake bug, setting up SMB/mDNS network discovery, and installing/managing gaming platforms (Battle.net, Lutris). These are standalone; none are wired into `install.sh` or `apply.sh`, so run them directly when needed.
+Reference for every script in [`scripts/`](../scripts/) — one-shot utilities for backing up dev-tool configs (Antigravity CLI, Claude Code, Zed), recovering the Antigravity IDE launcher, fixing an AMD GPU monitor-wake bug, setting up SMB/mDNS network discovery, and installing/managing gaming platforms (Battle.net, Hearthstone Deck Tracker, Lutris). These are standalone; none are wired into `install.sh` or `apply.sh`, so run them directly when needed.
 
 ## Table of Contents
 
@@ -13,10 +13,17 @@ Reference for every script in [`scripts/`](../scripts/) — one-shot utilities f
 7. [install-gaming-battlenet.sh](#install-gaming-battlenetsh)
 8. [launch-battlenet.sh](#launch-battlenetsh)
 9. [remove-gaming-battlenet.sh](#remove-gaming-battlenetsh)
-10. [install-gaming-lutris.sh](#install-gaming-lutrissh)
-11. [remove-gaming-lutris.sh](#remove-gaming-lutrissh)
-12. [install-gpu-lib32.sh](#install-gpu-lib32sh)
-13. [setup-local-bin-path.sh](#setup-local-bin-pathsh)
+10. [install-gaming-hdt.sh](#install-gaming-hdtsh)
+11. [launch-hdt.sh](#launch-hdtsh)
+12. [remove-gaming-hdt.sh](#remove-gaming-hdtsh)
+13. [install-gaming-lutris.sh](#install-gaming-lutrissh)
+14. [remove-gaming-lutris.sh](#remove-gaming-lutrissh)
+15. [install-gpu-lib32.sh](#install-gpu-lib32sh)
+16. [setup-local-bin-path.sh](#setup-local-bin-pathsh)
+17. [install-android-waydroid.sh](#install-android-waydroidsh)
+18. [launch-waydroid.sh](#launch-waydroidsh)
+19. [remove-android-waydroid.sh](#remove-android-waydroidsh)
+20. [fix-waydroid-firewall.sh](#fix-waydroid-firewallsh)
 
 ---
 
@@ -299,6 +306,79 @@ launch-battlenet --help          # show help
 
 ---
 
+## install-gaming-hdt.sh
+
+**Purpose**: Installs [Hearthstone Deck Tracker](https://hsdecktracker.net/) (HDT) **into the existing Battle.net Proton prefix** (`~/Games/battlenet`). HDT only tracks a Hearthstone install that lives in the same Wine prefix — that's how it reads the game's log files and overlays it — so this reuses the Battle.net prefix rather than creating a separate one. No Lutris and no extra wine prefix involved.
+
+**Usage**:
+```bash
+./install-gaming-hdt.sh
+```
+
+**What it does**:
+1. Verifies the Battle.net prefix exists (`Battle.net Launcher.exe` present); exits with guidance if not.
+2. Warns (but continues) if Hearthstone isn't installed in the prefix yet — HDT can't track anything until it is.
+3. Installs `winetricks`, `cabextract`, `unzip`, `curl` via `pacman` (`--needed`).
+4. Installs **.NET Framework 4.8** into the prefix using GE-Proton's own `wine` build (auto-detected under `~/.local/share/Steam/compatibilitytools.d/GE-Proton*`). Idempotent — skips if `dotnet48` is already recorded in the prefix's `winetricks.log`.
+5. Downloads the latest HDT portable zip from GitHub (`HearthSim/Hearthstone-Deck-Tracker`) into `~/.cache/cachyos-gaming/`.
+6. Extracts it into the prefix at `~/Games/battlenet/drive_c/Hearthstone Deck Tracker/`.
+7. Installs the `launch-hdt` script to `~/.local/bin/launch-hdt` and a desktop entry to `~/.local/share/applications/hdt.desktop`.
+
+**Prerequisites**: Battle.net installed via [install-gaming-battlenet.sh](#install-gaming-battlenetsh) **and Hearthstone installed through it** (needs your Blizzard login — launch Battle.net with `launch-battlenet`); GE-Proton already fetched by umu (happens on first Battle.net launch); `sudo` access.
+
+**Warnings**:
+- The .NET 4.8 install takes several minutes and a few Wine dialogs may flash by — let it run unattended.
+- HDT only tracks the Hearthstone that lives in this same prefix. Install HDT *after* Hearthstone, and start Hearthstone before HDT.
+
+---
+
+## launch-hdt.sh
+
+**Purpose**: Launches Hearthstone Deck Tracker via umu-launcher and GE-Proton in the Battle.net prefix, so it can attach to the running Hearthstone.
+
+**Usage**:
+```bash
+launch-hdt                 # standard launch
+launch-hdt --with-mangohud # launch with MangoHud overlay
+launch-hdt --help          # show help
+```
+
+**What it does**:
+1. Verifies HDT is installed at `~/Games/battlenet/drive_c/Hearthstone Deck Tracker/`.
+2. Sets the Wine/Proton environment (`WINEPREFIX`, `PROTONPATH=GE-Proton`, `GAMEID=umu-battlenet`, `PROTON_VERB=run`) — the same prefix/GAMEID as Battle.net.
+3. Optionally adds `MANGOHUD=1` with `--with-mangohud`.
+4. Invokes `umu-run` with the HDT executable.
+
+**Prerequisites**: HDT installed via `install-gaming-hdt.sh`; `umu-launcher` installed; `~/.local/bin` on `$PATH`. Start Hearthstone (`launch-battlenet` → launch Hearthstone) first so HDT can detect it.
+
+**Warnings**:
+- If HDT can't find Hearthstone automatically, point it at the Hearthstone folder *inside the prefix* (e.g. `C:\Program Files (x86)\Hearthstone`).
+
+---
+
+## remove-gaming-hdt.sh
+
+**Purpose**: Removes Hearthstone Deck Tracker — its files inside the Battle.net prefix, the launcher, and the desktop entry — while leaving the Battle.net prefix and its .NET runtime intact (both are shared with Battle.net/Hearthstone).
+
+**Usage**:
+```bash
+./remove-gaming-hdt.sh
+```
+
+**What it does**:
+1. Kills any running `Hearthstone Deck Tracker.exe` process.
+2. Removes `~/Games/battlenet/drive_c/Hearthstone Deck Tracker/`.
+3. Removes the launcher at `~/.local/bin/launch-hdt`.
+4. Removes the desktop entry at `~/.local/share/applications/hdt.desktop` and updates the desktop database.
+5. Removes the cached HDT zip(s) from `~/.cache/cachyos-gaming/`.
+
+**Prerequisites**: None.
+
+**Warnings**:
+- Leaves the Battle.net prefix and the .NET runtime in place on purpose — they belong to Battle.net/Hearthstone. Use [remove-gaming-battlenet.sh](#remove-gaming-battlenetsh) to remove those.
+
+---
+
 ## install-gaming-lutris.sh
 
 **Purpose**: Installs Lutris gaming platform along with Wine and runtime dependencies (wine-staging, wine-mono, wine-gecko, winetricks), AMD lib32 graphics drivers, and umu-launcher. Also patches the Lutris shebang for machines where `python3` is managed by mise (a version manager), ensuring Lutris can import its Python modules correctly.
@@ -397,3 +477,121 @@ source ./install-gpu-lib32.sh && install_gpu_lib32
 **Warnings**:
 - `environment.d` applies on the **next re-login** (the user manager reads it at session start). For the current terminal, run `export PATH="$HOME/.local/bin:$PATH"` once.
 - Idempotent and safe to re-run, including on a second machine.
+
+---
+
+## install-android-waydroid.sh
+
+**Purpose**: Installs Waydroid (Android via LXC) on CachyOS + niri so Android apps run as native Wayland windows. This script is CachyOS-specific: the kernel ships `binder` built-in, so no DKMS/kernel module steps are needed — the blocker that stops Waydroid on other distros is already solved here.
+
+**Usage**:
+```bash
+./install-android-waydroid.sh
+```
+
+**What it does**:
+1. Installs `waydroid` via `sudo pacman -S --needed --noconfirm` (lives in the `extra` sync repo — no AUR).
+2. Enables and starts `waydroid-container.service` via `systemctl` if it isn't already running (skips if already active, so re-runs are safe).
+3. **First-time init only** (skipped on re-run if `waydroid.cfg` or `~/.local/share/waydroid` exists): prompts whether to use the VANILLA (Google-free LineageOS, recommended default) or GAPPS (Google Play included, requires device registration) system image. Downloads the image (several GB) via `sudo waydroid init -s <image>`. The image is cached so re-running the script does not re-download.
+4. Installs the `launch-waydroid` launcher script to `~/.local/bin/launch-waydroid` (requires `~/.local/bin` on `$PATH`).
+5. Installs the desktop entry to `~/.local/share/applications/waydroid.desktop` and updates the desktop database.
+6. Ensures `~/.local/bin` is on `$PATH` by sourcing [setup-local-bin-path.sh](#setup-local-bin-pathsh) (idempotent).
+7. Prints setup completion and platform-specific notes (GAPPS registration, AMD GPU troubleshooting).
+
+**Prerequisites**: `sudo` access (packages and container service require root); `~/.local/bin` must be on `$PATH` for the launcher command to resolve — this script sets it up automatically via `setup-local-bin-path.sh`, but a re-login is required for the current session to see it.
+
+**Notes on system images**:
+- **VANILLA** (default): Google-free LineageOS. No registration needed. Recommended.
+- **GAPPS** (opt-in): Includes Google Play Services and Play Store. Requires a one-time device registration at `https://www.google.com/android/uncertified` after the first boot (see Warnings below) or Play will refuse to run.
+
+**Notes on ARM apps**:
+- The x86_64 Android image natively runs x86 Android apps. Many Play Store apps are ARM-only; running them requires libhoudini/libndk translation. This is out of scope for the installer — the community `waydroid_script` project documents the process. Waydroid will fail to launch ARM apps until translation is installed.
+
+**Warnings**:
+- **The CachyOS kernel has `binder` built in** — no `modprobe` step or binder DKMS is needed or present. Do not add it.
+- The first boot can take a moment while the LXC container initializes and the Android system starts.
+- **GAPPS device registration required** (if chosen): After the first boot, read the GSF / Android ID and register it at `https://www.google.com/android/uncertified`. Until you do, Google Play will refuse to run. The registration command is printed when the script finishes; re-run it from a Waydroid session shell.
+- **niri window rules are best-guess matchers** — verify them after first launch via `niri msg windows` and adjust `niri/cfg/rules.kdl` if needed. See the Battle.net rules in that file for the commented-template style.
+
+---
+
+## launch-waydroid.sh
+
+**Purpose**: Launches Android apps via Waydroid, or opens the full Android UI.
+
+**Usage**:
+```bash
+launch-waydroid                # open the full Android UI (default)
+launch-waydroid --app <package>  # launch a specific Android app by package name
+launch-waydroid --help         # show help
+```
+
+**What it does**:
+1. Checks that `waydroid` is installed; exits with an error if not.
+2. Ensures the Waydroid session is running — if `waydroid status` shows the session stopped, it starts it in the background (backgrounded via `waydroid session start`; waits 2 seconds for startup).
+3. If `--app <package>` is passed, launches that specific app via `waydroid app launch <package>` (single-window mode).
+4. If no `--app` is given, opens the full Android UI via `waydroid show-full-ui` (displays the entire Android desktop in one window).
+
+**Prerequisites**: Waydroid must be installed via `install-android-waydroid.sh` first; `~/.local/bin` must be on `$PATH` for the command to resolve.
+
+**Warnings**:
+- The first session can take a moment to boot the LXC container. Subsequent launches are faster.
+- Auto-generated per-app shortcuts appear in your app menu once you install Android apps via the full UI or Play Store.
+- Multi-window apps carry an app-id like `waydroid.<package>` — these are handled by the niri window rules (see [install-android-waydroid.sh](#install-android-waydroidsh) notes on rule verification).
+
+---
+
+## remove-android-waydroid.sh
+
+**Purpose**: Uninstalls Waydroid, stops the Android container, and optionally deletes downloaded images and app data. Leaves cleanup decisions to the user (large/irreversible steps require confirmation).
+
+**Usage**:
+```bash
+./remove-android-waydroid.sh
+```
+
+**What it does**:
+1. Checks if the `waydroid` package is installed; continues (with a note) if it isn't, to clean up any leftover files.
+2. Stops the running Waydroid session via `waydroid session stop` (best-effort; ignores errors if already stopped).
+3. Disables and stops the `waydroid-container.service` via `systemctl` (best-effort; ignores errors if not running).
+4. **Prompts before deleting images and app data** (large, irreversible step): offers to delete `/var/lib/waydroid` (downloaded system/vendor images, multi-GB) and `~/.local/share/waydroid` (your Waydroid profile and all installed app data). If confirmed, deletes both.
+5. **Prompts whether to remove the package** (only if it was installed): confirms and runs `sudo pacman -Rns --noconfirm waydroid` if answered yes.
+6. Removes the launcher script at `~/.local/bin/launch-waydroid`.
+7. Removes the desktop entry at `~/.local/share/applications/waydroid.desktop`.
+8. Removes any auto-generated per-app shortcuts at `~/.local/share/applications/waydroid.*.desktop` and updates the desktop database.
+9. Prints a summary of what was removed or skipped.
+
+**Prerequisites**: None; the script handles cases where Waydroid or its components are not fully installed.
+
+**Warnings**:
+- This script **permanently deletes** the Waydroid images (downloaded Android system) and all app data (every installed app and its settings/files) — there is no undo. The delete step requires explicit confirmation.
+- Prompts are non-interactive `[y/N]` (default is No); answer `y` or `Y` to proceed with deletions.
+- Leaving `/var/lib/waydroid` and `~/.local/share/waydroid` intact preserves your images and app data — you can reinstall Waydroid later and resume (though this is rare; most users delete everything).
+
+---
+
+## fix-waydroid-firewall.sh
+
+**Purpose**: Fixes the common "Waydroid boots but Android has no internet" problem on this machine, where the host firewall drops the container's forwarded traffic. Waydroid's container service builds a NAT bridge on the `waydroid0` interface (subnet `192.168.240.0/24`) and runs its own dnsmasq on the host for the Android side's DNS/DHCP; if the firewall blocks forwarding or DNS/DHCP from that interface, Android has no connectivity.
+
+**Usage**:
+```bash
+./fix-waydroid-firewall.sh            # apply the fix
+./fix-waydroid-firewall.sh --revert   # undo the firewall rules it added
+./fix-waydroid-firewall.sh --help     # show help
+```
+
+**What it does**:
+1. **Auto-detects the active firewall backend**: `ufw` (what this machine uses — `firewalld` isn't installed) or `firewalld`. If neither is active it just ensures IP forwarding and says there's nothing to open.
+2. **Persists IP forwarding** by writing `net.ipv4.ip_forward=1` to `/etc/sysctl.d/99-waydroid-forward.conf` and applying it immediately. (The container service sets this at runtime too; persisting it makes it independent of the service.)
+3. **ufw path**: adds a targeted `ufw route allow in on waydroid0` forwarding rule (safer than flipping `DEFAULT_FORWARD_POLICY` to `ACCEPT`, which this machine has set to `DROP` and which would otherwise permit *all* forwarding — ufw's built-in `RELATED,ESTABLISHED` rule handles the return traffic), plus interface-scoped `allow in on waydroid0` rules for DNS (53/udp, 53/tcp) and DHCP (67/udp), then `ufw reload`.
+4. **firewalld path**: `firewall-cmd --zone=trusted --add-interface=waydroid0 --permanent` + `--reload`.
+5. **Restarts `waydroid-container.service`** (if running) so it re-establishes its network under the new rules; if it isn't running, says the rules apply next time you launch.
+6. `--revert` removes the rules it added and deletes the sysctl drop-in.
+
+**Prerequisites**: `sudo` access. The `waydroid0` interface does **not** need to exist yet — the rules reference it by name and apply once the container network comes up. Run this after [install-android-waydroid.sh](#install-android-waydroidsh), only if you actually see no internet inside Android.
+
+**Warnings**:
+- This machine uses **ufw**, so the firewalld commands in generic Waydroid guides (the KDE/default path) do **not** apply here — the script picks the ufw path automatically. Don't run the firewalld `firewall-cmd` commands by hand on this box.
+- The rules are **idempotent** — re-running is safe (ufw skips rules it already has).
+- Rules persist across reboots; use `--revert` to cleanly remove them (the [remover](#remove-android-waydroidsh) does not touch firewall rules).

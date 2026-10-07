@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Waydroid
+GenericName=Android Container
+Comment=Android apps via Waydroid
+Exec=launch-waydroid
+Icon=waydroid
+Terminal=false
+Categories=System;Utility;
+StartupNotify=true
