@@ -60,3 +60,44 @@
         shadow { off; }
         draw-border-with-background false
     }
+
+    // ── Waydroid (Android container) ──────────────────────────────────────────
+    // Android apps run as native Wayland windows via the Waydroid LXC container.
+    //
+    // !!! MATCHERS ARE A BEST GUESS — VERIFY AT RUNTIME !!!
+    // The real niri app-ids are NOT known until Waydroid actually runs. Observed
+    // conventions: the full desktop window (`waydroid show-full-ui`) is usually
+    // app-id/title `Waydroid`, and each individual app (multi-window mode) gets an
+    // app-id of the form `waydroid.<package>` (e.g. `waydroid.com.android.settings`).
+    // Case and exact strings vary by Waydroid version — the full-UI window is
+    // sometimes lowercase `waydroid`. After the first launch, inspect the live
+    // windows and correct the matchers below:
+    //     niri msg windows
+    //     niri msg --json windows
+    // No blur rule is set: niri has no window blur, so there is nothing to drop.
+
+    // Full-UI window ("waydroid show-full-ui"): float + center at a tablet-ish
+    // size. niri centers floating windows on open by default, so `open-floating
+    // true` reproduces a centered launcher; size comes from default-*-width/height.
+    // 960x720 is a reasonable tablet aspect — adjust to taste.
+    window-rule {
+        match app-id=r#"^Waydroid$"#
+        // match app-id=r#"^waydroid$"#  // TEMPLATE — swap in if the full-UI app-id is lowercase (verify via `niri msg windows`)
+        open-floating true
+        default-column-width { fixed 960; }
+        default-window-height { fixed 720; }
+    }
+
+    // Individual Android app windows (multi-window mode): app-id `waydroid.<pkg>`.
+    // Intended behavior: let these TILE normally like any other window, so this is
+    // intentionally a light/no-op rule rather than forcing floating. niri regex
+    // matches are anchored patterns, so `^waydroid\.` matches any `waydroid.<pkg>`
+    // app-id as a prefix. Uncomment / extend once the real app-ids are confirmed
+    // via `niri msg windows`. Example (left commented — tiling is the default):
+    // window-rule {
+    //     match app-id=r#"^waydroid\."#
+    //     // e.g. per-app sizing or floating for a specific package:
+    //     // match app-id=r#"^waydroid\.com\.android\.settings$"#
+    //     // open-floating true
+    // }
+
