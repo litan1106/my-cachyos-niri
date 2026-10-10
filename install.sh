@@ -249,10 +249,14 @@ if [ -n "${NIRI_SOCKET:-}" ] || pgrep -x niri &>/dev/null; then
     ok "Niri configuration reloaded."
 fi
 
-if pgrep -x quickshell &>/dev/null; then
+if pgrep -f 'qs -c noctalia-shell' &>/dev/null; then
     header "Reloading Noctalia Shell"
-    qs -c noctalia-shell ipc call core restart || true
-    ok "Noctalia shell configuration reloaded."
+    # noctalia 5.2.x has no `core restart` IPC; relaunch the shell so QML changes load.
+    pkill -f 'qs -c noctalia-shell' || true
+    sleep 1
+    setsid qs -c noctalia-shell >/dev/null 2>&1 < /dev/null &
+    disown || true
+    ok "Noctalia shell relaunched."
 fi
 
 echo ""
