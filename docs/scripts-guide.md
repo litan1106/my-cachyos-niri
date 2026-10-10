@@ -1,6 +1,6 @@
 # Scripts Guide
 
-Reference for every script in [`scripts/`](../scripts/) — one-shot utilities for backing up dev-tool configs (Antigravity CLI, Claude Code, Zed), recovering the Antigravity IDE launcher, fixing an AMD GPU monitor-wake bug, setting up SMB/mDNS network discovery, and installing/managing gaming platforms (Battle.net, Hearthstone Deck Tracker, Lutris). These are standalone; none are wired into `install.sh` or `apply.sh`, so run them directly when needed.
+Reference for every script in [`scripts/`](../scripts/) — one-shot utilities for backing up dev-tool configs (Antigravity CLI, Claude Code, Zed), recovering the Antigravity IDE launcher, fixing an AMD GPU monitor-wake bug, setting up SMB/mDNS network discovery, and installing/managing gaming platforms (Battle.net, Hearthstone Deck Tracker, Lutris, Hongguo). These are standalone; none are wired into `install.sh` or `apply.sh`, so run them directly when needed.
 
 ## Table of Contents
 
@@ -18,12 +18,15 @@ Reference for every script in [`scripts/`](../scripts/) — one-shot utilities f
 12. [remove-gaming-hdt.sh](#remove-gaming-hdtsh)
 13. [install-gaming-lutris.sh](#install-gaming-lutrissh)
 14. [remove-gaming-lutris.sh](#remove-gaming-lutrissh)
-15. [install-gpu-lib32.sh](#install-gpu-lib32sh)
-16. [setup-local-bin-path.sh](#setup-local-bin-pathsh)
-17. [install-android-waydroid.sh](#install-android-waydroidsh)
-18. [launch-waydroid.sh](#launch-waydroidsh)
-19. [remove-android-waydroid.sh](#remove-android-waydroidsh)
-20. [fix-waydroid-firewall.sh](#fix-waydroid-firewallsh)
+15. [install-hongguo.sh](#install-hongguosh)
+16. [launch-hongguo.sh](#launch-hongguosh)
+17. [remove-hongguo.sh](#remove-hongguosh)
+18. [install-gpu-lib32.sh](#install-gpu-lib32sh)
+19. [setup-local-bin-path.sh](#setup-local-bin-pathsh)
+20. [install-android-waydroid.sh](#install-android-waydroidsh)
+21. [launch-waydroid.sh](#launch-waydroidsh)
+22. [remove-android-waydroid.sh](#remove-android-waydroidsh)
+23. [fix-waydroid-firewall.sh](#fix-waydroid-firewallsh)
 
 ---
 
@@ -426,6 +429,113 @@ launch-hdt --help          # show help
 **Warnings**:
 - This script **permanently deletes** all Lutris configurations, game prefixes, installed games, and Wine caches — there is no undo.
 - Runs `pacman -Rns --noconfirm`, so package removal is automatic without prompts.
+
+---
+
+## install-hongguo.sh
+
+**Purpose**: Installs the Hongguo (红果短剧) desktop app **100% natively — no Wine, no Proton**. Hongguo ships only as a Windows installer, but it's just an NSIS self-extracting archive, so the script **unpacks it with `7z`** (no Wine) and keeps only the app's Python backend + Java signer jar (discarding the bundled Windows `python/` and `jre/`). It then installs the `launch-hongguo` script to `~/.local/bin/` with a desktop entry. Shared constants/helpers live in `hongguo-common.sh` (sourced, not run directly). The app's Edge/WebView2 UI crashes under Wine and is **not** used; instead [`launch-hongguo`](#launch-hongguosh) runs the backend on a native Python venv (with the signer on the host JVM) and opens the UI in a **native browser**. See the deep-dive under [launch-hongguo.sh](#launch-hongguosh) for the full investigation of how this app is structured and why none of it needs Wine.
+
+**Usage**:
+```bash
+./install-hongguo.sh
+# Use a newer build:
+HONGGUO_INSTALLER_URL="https://.../hongguo-<ver>-windows-x86_64-setup.exe" ./install-hongguo.sh
+```
+
+**What it does**:
+1. Installs `uv`, `7zip`, and `curl` via `pacman` (all in the `cachyos`/Arch sync repos — no AUR, no Wine). `uv` provisions the native Python venv; `7zip` unpacks the setup.exe; `curl` downloads it. A host JVM runs the API signer, so it installs `jre-openjdk` **only if there's no `java` on `$PATH`** already (most CachyOS boxes ship a JDK; the unversioned `jre-openjdk` would otherwise pull a newer JDK than needed). It also checks for a Chromium-class browser (used for the UI) and suggests installing one if none is found.
+2. Downloads the installer (default: the pinned `v1.0.12` GitHub release, overridable with `$HONGGUO_INSTALLER_URL`) into `~/.cache/cachyos-windows/`, reusing a cached copy if present.
+3. Unpacks `backend/*` from the NSIS installer with `7z` into a temp staging dir (no Wine), drops the bundled Windows `python/` and `jre/` (~330 MB → ~45 MB kept), and moves the result to `~/.local/share/hongguo-native/backend`.
+4. Installs the `launch-hongguo` script to `~/.local/bin/` and a desktop entry to `~/.local/share/applications/hongguo.desktop`, then updates the desktop database.
+5. Ensures `~/.local/bin` is on `$PATH` via [setup-local-bin-path.sh](#setup-local-bin-pathsh).
+
+**Prerequisites**: `sudo` access (packages install via `pacman`); `~/.local/bin` on `$PATH` for the launcher command (set up automatically). No GPU drivers, multilib, or Wine needed — the UI runs in your existing native browser.
+
+**Warnings**:
+- The download URL is **pinned to a specific version** (unlike Battle.net's stable vendor URL). Override `$HONGGUO_INSTALLER_URL` for newer builds, or edit the default in the script. To update, delete the cached `~/.cache/cachyos-windows/hongguo-*-setup.exe` and re-run.
+- Extraction expects a `backend/` tree inside the installer (checked for `server.py`). If a future build changes that layout, the script aborts with a hint to inspect `7z l <installer>`.
+- The niri window rule for Hongguo (`niri/cfg/rules.kdl`) matches `app-id=hongguo` — stable because the launcher opens the UI with `--class=hongguo`. Confirmed working; adjust the sizing there if you prefer tiled/other dimensions.
+- This is an unofficial, reverse-engineered FQNovel client — treat it as such. **Read the investigation deep-dive under [launch-hongguo.sh](#launch-hongguosh) to understand what's actually running.** The Android app via Waydroid ([install-android-waydroid.sh](#install-android-waydroidsh)) remains an alternative.
+
+---
+
+## launch-hongguo.sh
+
+**Purpose**: Runs Hongguo **100% natively — no Wine, no Proton**. It runs the app's Python backend in a venv built from your **system Python** (with the API signer on the host JVM) and opens the UI in a native Linux browser — the app's own Edge/WebView2 shell (which crashes unfixably under Wine) is simply not used. Video is served as plain MP4, so H264 "just works" in the native browser.
+
+**Usage**:
+```bash
+launch-hongguo                  # start backend, open UI in a native browser
+launch-hongguo --browser CMD    # use a specific browser command
+launch-hongguo --no-open        # start backend only; print the URL
+launch-hongguo --reinstall-deps # rebuild the Python venv, then run
+launch-hongguo --help           # show help
+```
+
+**What it does**:
+1. Locates the extracted backend (`find_backend_dir` → `~/.local/share/hongguo-native/backend`); exits with guidance if missing. Requires a **host** JVM (`java` on `$PATH`) for the signer; points to `pacman -S jre-openjdk` if absent.
+2. Provisions (once) a venv at `~/.local/share/hongguo-native/venv` from your **system Python** (`python3`; override with `$HONGGUO_PYTHON`) and installs the backend's deps into it with `uv` (falls back to `python3 -m venv` + `pip`). The app is pure Python and its deps ship binary wheels for current Pythons, so no separate runtime is downloaded. The venv is cached and reused; `--reinstall-deps` rebuilds it.
+3. Generates a per-launch 64-hex session API key, installs `standalone_server.py` into the backend dir, and writes the web UI (`scripts/hongguo-web/index.html`) into the backend's `web/index.html` with that key baked in. Both are re-installed every launch, so they survive app updates/reinstalls. `standalone_server.py` also wires in **persistent caches** (see below) before importing the vendor `server`.
+4. Creates the runtime data dirs under `~/.local/share/hongguo-native/` (`data/`, `data/stream-cache`, `hls/`).
+5. Starts the `unidbg-sign.jar` signer on the **host JVM** on a free port and waits until it's listening.
+6. Starts the backend with the venv's Python (`python -I standalone_server.py`) on a **stable port** (`8793` by default; override with `$HONGGUO_PORT`, falls back to a random free port only if it's taken), run **from the backend dir** so `import server` and its siblings (incl. `frida/offline_decrypt.py`, which `server.py` adds to `sys.path`) resolve to the real code — with `SIGN_SERVER` pointed at the host signer and `HONGGUO_SESSION_API_KEY` / `HONGGUO_CONTENT_CONFIG` (= the shipped `guest-config.json`) / data-dir env set (all plain Linux paths). Waits until `http://127.0.0.1:<port>/` answers. A stale backend from a crashed prior run is reaped first so the stable port is free. The stable port matters for caching: cover thumbnails load via a keyless `/img?url=…` proxy sent with a long `max-age`, but the browser keys its disk cache on the full URL (including the port) — a random port each launch would silently re-download every cover.
+7. Opens `http://127.0.0.1:<port>/ui` in a native browser — a Chromium-class browser in **app mode** (chromeless window, dedicated profile, `--class=hongguo`) if one is found, else `$BROWSER`/`xdg-open`. In app mode the script waits on the browser window and tears down the backend + signer when it closes; otherwise it runs until `Ctrl-C`.
+
+**Prerequisites**: Hongguo installed via `install-hongguo.sh`; a host `java` (any JDK — `jre-openjdk` is auto-installed only if none exists); `curl`, `uv`, and a `python3`; a browser (Chromium-class recommended); `~/.local/bin` on `$PATH`. No `umu-launcher`/Wine.
+
+**Warnings**:
+- The **first** run installs the backend's Python deps into a venv using your system Python (~1 min, one-time). Subsequent runs start in about a second.
+- The first `/stream` request for an episode downloads + decrypts the whole clip server-side before it plays (then it's cached and instant); expect a short wait on first play.
+
+**Persistent caches** (why re-opens are fast): stock Hongguo keeps its catalog cache (`safeguards._cache`) and HEIC→JPEG cover cache (`server._img_cache`) in **process memory**, so every app open started cold — the first click on each page hit the throttled FQNovel API (a few seconds) and every cover re-downloaded/re-decoded. `standalone_server.py` now backs both with disk stores under `~/.local/share/hongguo-native/data/cache/` (`catalog.sqlite` + `img/`), honouring the vendor's own TTLs (rank 30 min, episodes/stream URLs ~5–6 h, search 10 min). It monkeypatches `safeguards.cache_get/cache_set` before importing `server` (both `hongguo.py` and `server.py` use `import safeguards as SG`, so the swap is picked up at request time) and swaps `server._img_cache` for a disk-backed mapping after import — all best-effort, falling back to stock in-memory behaviour on any error. Combined with the stable port (so the browser caches covers too), a warm re-open serves pages from disk in ~1 ms instead of ~3.5 s. The cache lives under the data dir, so `remove-hongguo.sh` clears it; delete `data/cache/` by hand to force a cold refresh.
+
+> **📓 Getting Hongguo working on Linux — the full investigation**
+>
+> The end state is Wine-free (install *and* run), but getting there meant first making it work under Proton, then peeling Wine away entirely. This app is **not** the simple "Tauri + WebView2" wrapper it looks like. It's a native **companion launcher** (`hongguo-desktop-companion.exe`, a Tauri 2 app) that starts a local **Python/FastAPI backend**, which forges ByteDance/FQNovel Android API signatures with a **Java signer** (`unidbg-sign.jar`, emulating `libmetasec_ml.so`), fetches the catalog, and serves **decrypted, seekable MP4** over HTTP; the UI is rendered by the bundled **Edge/WebView2 (Chromium 154)** runtime. It works on native Windows but broke in two independent places under Proton. Diagnosing it meant running each component by hand under the prefix and reading the companion's `startup-status.json` / `diagnostics/lifecycle.jsonl` under `AppData/Roaming/cn.guoban.desktop-companion/`, plus full Wine SEH traces (`WINEDEBUG=+seh,+module`).
+>
+> **Problem 1 — no window at all (SOLVED).** The companion exited ~instantly. Root cause: the **signer** died, so the backend couldn't authenticate. The bundled **Windows JRE under Wine** failed two ways: `Error: could not find java.dll` (the Java launcher can't resolve its runtime through the **non-ASCII install path** `红果免费短剧` under Wine), and — past that — `NullPointerException … sun.nio.ch.UnixDomainSockets.localAddress` when `Selector.open()` runs (JDK 17+ builds its NIO selector wakeup pipe over an **AF_UNIX** socket, and **Wine's `getsockname` returns null**). No JVM flag works around it.
+>
+>   **Fix:** run the signer on the **host (native Linux) JVM** — no AF_UNIX/Selector bug. It's just a localhost HTTP service, and Wine shares the host's `127.0.0.1`, so the Wine-side backend reaches it directly (verified Wine→host `POST /sign` → `200`).
+>
+> **Problem 2 — WebView2 crashes in Wine's COM, not the GPU (UNFIXABLE; bypassed).** With the signer fixed, the window opens but paints **white and dies in ~1s**. A full SEH trace shows the real cause: WebView2 (Edge/Chromium 154) dies during init with `EXCEPTION_ACCESS_VIOLATION (0xc0000005)` at a **fixed address inside Wine's `ole32.dll`** (`ole32+0x34d7d`) — a Wine COM bug, reproducible identically with GPU **and** accessibility (`PROTON_USE_XALIA=0`) disabled and with any flags. So it is **not** a GPU or H264 problem, and we can't fix Wine's `ole32` from the app side. The earlier software-rendering idea (`--disable-gpu --use-angle=swiftshader`) was a dead end on two counts: the crash isn't GPU, and this app doesn't read `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` anyway — it's a Tauri 2.11/wry build that sets its own browser args (confirmed: the env var name isn't in the binary; env passthrough and a Wine-registry `HKCU\Environment` override both reach the process but have no effect).
+>
+>   **Fix (step 1): drop the broken half.** The Windows app = (Python backend that works under Wine) + (Edge/WebView2 shell that crashes under Wine). We keep the backend and replace the shell with a **native Linux browser**. `launch-hongguo` runs `standalone_server.py` (the backend's own FastAPI `app`, started like the app's `desktop_bootstrap.py` does, minus the companion/handshake/in-Wine signer) on a fixed port and opens `/ui` — a small self-contained UI (`scripts/hongguo-web/index.html`) that calls the backend's documented endpoints (`/rank`, `/latest`, `/search`, `/episodes`, `/stream`). The backend auth runs in **ephemeral mode**: when `HONGGUO_SESSION_API_KEY` (a 64-hex string) is set, that is the *only* valid key, so the launcher picks one and bakes it into the served UI.
+>
+> **H264 video.** Because `/stream` serves a plain decrypted MP4 (H264) with HTTP Range support, a native browser's `<video>` plays it directly — no Media Foundation, no Wine codec path, no flags. This was the original "play H264 under Proton" goal, reached by not using WebView2 at all.
+>
+> **Fix (step 2): drop Wine entirely.** With the UI a native browser and the signer a host-JVM service, the only thing still under Wine was the Python backend — and *nothing in it is actually Windows-bound*. Its whole dependency closure (`requests`, `fastapi`, `uvicorn[standard]`, `pycryptodome`, `av`/PyAV, `pillow[-heif]`) ships as native Linux wheels; the 128 `.pyd` files in the bundle are just the stock CPython embeddable stdlib, which native Python already has; the optional reverse-engineering deps (`frida`, `redis`, `curl_cffi`) are import-guarded and unused when `SIGN_SERVER` is set; and it uses PyAV (bundled ffmpeg), not a shelled-out `ffmpeg.exe`. So the *same* backend code runs unchanged on a native venv built from the **system Python** (provisioned by `uv`; it also runs on the bundle's 3.11 if ever needed, via `$HONGGUO_PYTHON`). And since the setup.exe is just an NSIS archive, even the **install** needs no Wine — `7z x` unpacks the `backend/` tree directly (we keep ~45 MB of it, discarding the bundled Windows `python/`+`jre/`). End state: `install-hongguo` extracts with `7z`, `launch-hongguo` runs the backend on a native venv + host JVM + native browser — **no Wine, no Proton, no `umu-launcher`, no prefix anywhere.** That also removes the Proton cold-start that made an earlier Wine-hosted version of the UI feel sluggish (cached runs now reach ready in ~1s), and makes the recipe portable to macOS. (Aside: **Electron would be the wrong tool** — it only replaces the browser shell we already dropped, re-adding a bundled Chromium to do what the system browser does for free, while leaving the backend where it was. The win was porting the *backend* off Wine, not repackaging the UI.) Verified end-to-end on the 7z-extracted backend under native Python: `/rank` returns the real catalog, `/stream` serves seekable `video/mp4` (`HTTP 206`, `ftyp isom`).
+>
+> **Operational notes.**
+> - The signer runs on your host `java` — any mainstream JDK works (tested on OpenJDK 21; an LTS is ideal for this `--add-opens`-heavy unidbg jar). `install-hongguo.sh` adds `jre-openjdk` only if no `java` is present.
+> - The content config is the shipped `backend/guest-config.json` (a guest/"audit" FQNovel profile: `api5-normal-sinfonlinea.fqnovel.com`, no login). If a future build drops it, capture the real one by logging `HONGGUO_CONTENT_CONFIG`'s target.
+> - The backend writes a small startup log to `~/.local/share/hongguo-native/standalone.log` — check it if the backend won't come up.
+> - All state lives under `~/.local/share/hongguo-native/`: `backend/` (extracted app), `venv/` (built from the system Python, deps installed on first run, reused after — rebuild with `launch-hongguo --reinstall-deps`), and `data/`+`hls/` (runtime cache).
+>
+> **Alternative.** 红果短剧 is a ByteDance **Android-first** app; the Android version via **Waydroid** ([install-android-waydroid.sh](#install-android-waydroidsh)) is another route with a working media stack.
+
+---
+
+## remove-hongguo.sh
+
+**Purpose**: Uninstalls Hongguo — the extracted backend, native Python venv, runtime data, launcher, desktop entry, browser profile, and cached installer. (Nothing here touches Wine/Proton; the native install uses none.)
+
+**Usage**:
+```bash
+./remove-hongguo.sh
+```
+
+**What it does**:
+1. Stops the backend (`standalone_server.py`) and host-JVM signer (`FqTrace`) if running.
+2. Removes the app home `~/.local/share/hongguo-native/` (extracted backend + venv + data).
+3. Removes the launcher `~/.local/bin/launch-hongguo` and the desktop entry `~/.local/share/applications/hongguo.desktop`, then updates the desktop database.
+4. Removes the dedicated browser profile (`~/.local/share/hongguo-browser`) and cached `hongguo-*-setup.exe` installers from `~/.cache/cachyos-windows/`.
+
+**Prerequisites**: None; handles partial/missing installs.
+
+**Warnings**:
+- **Permanently deletes** `~/.local/share/hongguo-native/` — no undo.
+- Leaves the `uv` / `7zip` packages (and `jre-openjdk`, if the installer added it) in place — they're generally useful and shared; remove them manually if you want them gone.
 
 ---
 

@@ -61,6 +61,20 @@
         draw-border-with-background false
     }
 
+    // ── Hongguo (红果短剧) ────────────────────────────────────────────────────
+    // launch-hongguo runs the app's backend natively (no Wine) and opens the UI
+    // in a native Chromium-class browser in app mode with `--class=hongguo`, so
+    // the niri app-id is a stable "hongguo" (NOT a Proton/.exe window). The page
+    // <title> is "红果短剧".
+
+    // Main window: float + center at ~1280x800.
+    window-rule {
+        match app-id=r#"^hongguo$"#
+        open-floating true
+        default-column-width { fixed 1280; }
+        default-window-height { fixed 800; }
+    }
+
     // ── Waydroid (Android container) ──────────────────────────────────────────
     // Android apps run as native Wayland windows via the Waydroid LXC container.
     //
