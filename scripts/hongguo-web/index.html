@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>红果短剧</title>
+<style>
+  :root { --bg:#0d0d10; --card:#17171c; --card2:#1f1f27; --fg:#f2f2f5; --mut:#9a9aa8;
+          --accent:#ff4d4f; --accent2:#ff7875; --line:#2a2a33; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; }
+  body { background:var(--bg); color:var(--fg); font:15px/1.5 system-ui,"Noto Sans CJK SC","Microsoft YaHei",sans-serif; }
+  header { position:sticky; top:0; z-index:20; background:rgba(13,13,16,.92); backdrop-filter:blur(8px);
+           border-bottom:1px solid var(--line); padding:10px 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  .brand { font-weight:700; font-size:18px; color:var(--accent); white-space:nowrap; }
+  .brand span { color:var(--fg); }
+  nav { display:flex; gap:4px; flex:1; flex-wrap:wrap; }
+  nav button { background:transparent; color:var(--mut); border:0; padding:7px 13px; border-radius:20px;
+               cursor:pointer; font-size:14px; }
+  nav button.on { background:var(--accent); color:#fff; }
+  .search { display:flex; gap:6px; }
+  .search input { background:var(--card2); border:1px solid var(--line); color:var(--fg);
+                  padding:7px 12px; border-radius:20px; width:180px; outline:none; }
+  .search button { background:var(--card2); border:1px solid var(--line); color:var(--fg);
+                   padding:7px 13px; border-radius:20px; cursor:pointer; }
+  main { padding:16px; max-width:1400px; margin:0 auto; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; }
+  .card { background:var(--card); border-radius:12px; overflow:hidden; cursor:pointer;
+          border:1px solid var(--line); transition:transform .12s, border-color .12s; }
+  .card:hover { transform:translateY(-3px); border-color:var(--accent); }
+  .thumb { position:relative; aspect-ratio:3/4; background:var(--card2); }
+  .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .badge { position:absolute; top:6px; left:6px; background:rgba(0,0,0,.7); color:#ffd666;
+           font-size:12px; padding:2px 7px; border-radius:6px; }
+  .eps { position:absolute; bottom:6px; right:6px; background:rgba(0,0,0,.7); color:#fff;
+         font-size:11px; padding:2px 7px; border-radius:6px; }
+  .meta { padding:8px 10px; }
+  .meta .t { font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .meta .s { color:var(--mut); font-size:12px; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .status { color:var(--mut); padding:40px 0; text-align:center; }
+  .status.err { color:var(--accent2); }
+  /* player overlay */
+  .overlay { position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.85); display:none; }
+  .overlay.show { display:flex; }
+  .player { margin:auto; width:min(1100px,96vw); max-height:94vh; background:var(--card);
+            border-radius:14px; overflow:hidden; display:flex; flex-direction:column; }
+  .phead { display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid var(--line); }
+  .phead .pt { font-weight:700; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .phead .x { background:var(--card2); border:1px solid var(--line); color:var(--fg); border-radius:8px;
+              width:34px; height:34px; cursor:pointer; font-size:18px; }
+  video { width:100%; max-height:62vh; background:#000; display:block; }
+  .epbar { padding:10px 14px; display:flex; gap:7px; flex-wrap:wrap; overflow-y:auto; max-height:22vh; }
+  .epbar button { background:var(--card2); border:1px solid var(--line); color:var(--fg);
+                  min-width:46px; padding:7px 10px; border-radius:8px; cursor:pointer; font-size:13px; }
+  .epbar button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .epbar .pending { opacity:.5; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">红果<span>短剧</span></div>
+  <nav id="nav">
+    <button data-feed="latest" class="on">最新短剧</button>
+    <button data-feed="recommend">推荐</button>
+    <button data-feed="hot">热播</button>
+    <button data-feed="new">新剧</button>
+  </nav>
+  <form class="search" id="searchForm">
+    <input id="q" placeholder="搜索短剧…" autocomplete="off">
+    <button type="submit">搜索</button>
+  </form>
+</header>
+
+<main>
+  <div id="status" class="status">加载中…</div>
+  <div id="grid" class="grid"></div>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="player">
+    <div class="phead">
+      <div class="pt" id="pt">—</div>
+      <button class="x" id="closeBtn" title="关闭">×</button>
+    </div>
+    <video id="video" controls autoplay playsinline></video>
+    <div class="epbar" id="epbar"></div>
+  </div>
+</div>
+
+<script>
+const KEY = "__HG_API_KEY__";
+const api = (path, params={}) => {
+  const u = new URL(path, location.origin);
+  u.searchParams.set("api_key", KEY);
+  for (const [k,v] of Object.entries(params)) if (v!=null) u.searchParams.set(k, v);
+  return u.toString();
+};
+const img = (url) => url ? api("/img", {url}) : "";
+const j = async (path, params) => {
+  const r = await fetch(api(path, params));
+  if (!r.ok) throw new Error("HTTP "+r.status);
+  return r.json();
+};
+
+const $ = (s)=>document.querySelector(s);
+const grid = $("#grid"), status = $("#status");
+let curSid=null, curTitle="", curEps=[];
+
+function fmtPlays(n){ n=+n||0; if(n>=1e8)return (n/1e8).toFixed(1)+"亿";
+  if(n>=1e4)return (n/1e4).toFixed(1)+"万"; return ""+n; }
+
+function render(items){
+  grid.innerHTML="";
+  if(!items || !items.length){ status.textContent="没有结果"; status.className="status"; return; }
+  status.textContent=""; status.className="status";
+  for(const it of items){
+    const el=document.createElement("div"); el.className="card";
+    const plays=fmtPlays(it.play_cnt);
+    el.innerHTML=`<div class="thumb">
+        ${it.score?`<div class="badge">★ ${it.score}</div>`:""}
+        ${it.episode_cnt?`<div class="eps">${it.episode_cnt}集</div>`:""}
+        <img loading="lazy" src="${img(it.cover)}" alt="">
+      </div>
+      <div class="meta"><div class="t">${it.title||""}</div>
+        <div class="s">${plays?plays+"次播放":(it.intro||"").slice(0,18)}</div></div>`;
+    el.onclick=()=>openSeries(it.series_id, it.title);
+    grid.appendChild(el);
+  }
+}
+
+async function loadFeed(feed){
+  status.textContent="加载中…"; status.className="status"; grid.innerHTML="";
+  try{
+    let d;
+    if(feed==="latest") d=await j("/latest",{genre:"short_play"});
+    else d=await j("/rank",{board:feed, limit:40});
+    render(d.items);
+  }catch(e){ status.textContent="加载失败："+e.message; status.className="status err"; }
+}
+
+async function doSearch(q){
+  status.textContent="搜索中…"; status.className="status"; grid.innerHTML="";
+  try{ const d=await j("/search",{q}); render(d.items||d.results||d); }
+  catch(e){ status.textContent="搜索失败："+e.message; status.className="status err"; }
+}
+
+async function openSeries(sid, title){
+  curSid=sid; curTitle=title||""; curEps=[];
+  $("#pt").textContent=curTitle; $("#epbar").innerHTML='<span class="status">加载选集…</span>';
+  $("#video").removeAttribute("src"); $("#video").load();
+  $("#overlay").classList.add("show");
+  try{
+    const d=await j("/episodes",{series_id:sid});
+    curEps=(d.items||d.episodes||[]).slice().sort((a,b)=>(a.index||0)-(b.index||0));
+    const bar=$("#epbar"); bar.innerHTML="";
+    curEps.forEach(ep=>{
+      const b=document.createElement("button");
+      b.textContent=ep.index; b.title=ep.title||("第"+ep.index+"集");
+      b.onclick=()=>playEp(ep.index); bar.appendChild(b);
+    });
+    if(curEps.length) playEp(curEps[0].index);
+  }catch(e){ $("#epbar").innerHTML='<span class="status err">选集加载失败：'+e.message+'</span>'; }
+}
+
+function playEp(idx){
+  for(const b of $("#epbar").children) b.classList.toggle("on", b.textContent==""+idx);
+  const ep=curEps.find(e=>e.index===idx);
+  $("#pt").textContent=curTitle+(ep&&ep.title?(" · 第"+idx+"集"):"");
+  const v=$("#video");
+  v.src=api("/stream",{series_id:curSid, ep:idx});
+  v.play().catch(()=>{});
+}
+
+function closePlayer(){ const v=$("#video"); v.pause(); v.removeAttribute("src"); v.load();
+  $("#overlay").classList.remove("show"); }
+
+$("#nav").addEventListener("click", e=>{
+  const b=e.target.closest("button[data-feed]"); if(!b)return;
+  for(const x of $("#nav").children) x.classList.toggle("on", x===b);
+  loadFeed(b.dataset.feed);
+});
+$("#searchForm").addEventListener("submit", e=>{ e.preventDefault();
+  const q=$("#q").value.trim(); if(q) doSearch(q); });
+$("#closeBtn").onclick=closePlayer;
+$("#overlay").addEventListener("click", e=>{ if(e.target===$("#overlay")) closePlayer(); });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closePlayer(); });
+
+loadFeed("latest");
+</script>
+</body>
+</html>
