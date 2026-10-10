@@ -77,12 +77,25 @@ rm -rf "$HG_BACKEND"
 mv "$staging/backend" "$HG_BACKEND"
 echo "Backend installed to $HG_BACKEND ($(du -sh "$HG_BACKEND" | cut -f1))."
 
-# --- Install the launcher + desktop entry --------------------------------------
-install -Dm755 "$script_dir/launch-hongguo.sh" "$HOME/.local/bin/launch-hongguo"
+# --- Install the launcher (with its helpers) + desktop entry --------------------
+# launch-hongguo sources hongguo-common.sh and copies hongguo-web/* from its OWN
+# directory at runtime, so it can't live alone in ~/.local/bin. Install the whole
+# set into a lib dir under $HG_HOME, then symlink the launcher onto PATH -- it
+# resolves its real directory via `realpath "$0"`, so the symlink still finds the
+# helpers beside the target.
+launcher_dir="$HG_HOME/launcher"
+mkdir -p "$launcher_dir/hongguo-web"
+install -Dm755 "$script_dir/launch-hongguo.sh"                "$launcher_dir/launch-hongguo"
+install -Dm644 "$script_dir/hongguo-common.sh"               "$launcher_dir/hongguo-common.sh"
+install -Dm644 "$script_dir/hongguo-web/standalone_server.py" "$launcher_dir/hongguo-web/standalone_server.py"
+install -Dm644 "$script_dir/hongguo-web/index.html"          "$launcher_dir/hongguo-web/index.html"
+mkdir -p "$HOME/.local/bin"
+ln -sf "$launcher_dir/launch-hongguo" "$HOME/.local/bin/launch-hongguo"
+
 install -Dm644 "$script_dir/../applications/hongguo.desktop" \
   "$HOME/.local/share/applications/hongguo.desktop"
-# Pin Exec to the absolute launcher path so the menu entry works regardless of
-# whether ~/.local/bin is on PATH (it isn't on a default CachyOS session).
+# Pin Exec to the launcher symlink so the menu entry works regardless of whether
+# ~/.local/bin is on PATH (it isn't on a default CachyOS session).
 sed -i "s|^Exec=.*|Exec=$HOME/.local/bin/launch-hongguo|" \
   "$HOME/.local/share/applications/hongguo.desktop"
 update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true

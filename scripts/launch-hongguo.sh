@@ -132,10 +132,24 @@ data_dir="$HG_HOME/data"
 hls_dir="$HG_HOME/hls"
 mkdir -p "$hls_dir" "$data_dir/stream-cache"
 
-# --- Pick free ports -----------------------------------------------------------
+# --- Pick ports ----------------------------------------------------------------
+# The backend uses a STABLE port so the browser can cache cover thumbnails across
+# launches: covers load via a keyless /img?url=... proxy sent with a long
+# max-age, but the browser keys its cache on the full URL (incl. port) -- a random
+# port each launch would silently defeat that and re-download every cover. The
+# signer port is internal (backend -> signer only) so a random free one is fine.
+# Override the backend port with HONGGUO_PORT if 8793 clashes with something.
 free_port() { python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()'; }
+port_free() { ! ss -ltn 2>/dev/null | grep -q ":$1 "; }
 signer_port="$(free_port)"
-backend_port="$(free_port)"
+# Reclaim the stable port from a crashed prior run, then fall back to a random
+# port only if something else is holding it.
+pkill -f 'standalone_server.py' 2>/dev/null || true
+backend_port="${HONGGUO_PORT:-8793}"
+if ! port_free "$backend_port"; then
+  echo "Port $backend_port is busy; using a random port (cover cache won't persist this run)." >&2
+  backend_port="$(free_port)"
+fi
 
 # --- Start the host-JVM signer -------------------------------------------------
 pkill -f 'com.hongguo.sign.FqTrace' 2>/dev/null || true
