@@ -1,6 +1,6 @@
 # Scripts Guide
 
-Reference for every script in [`scripts/`](../scripts/) — one-shot utilities for backing up dev-tool configs (Antigravity CLI, Claude Code, Zed), recovering the Antigravity IDE launcher, fixing an AMD GPU monitor-wake bug, setting up SMB/mDNS network discovery, and installing/managing gaming platforms (Battle.net, Hearthstone Deck Tracker, Lutris, Hongguo). These are standalone; none are wired into `install.sh` or `apply.sh`, so run them directly when needed.
+Reference for every script in [`scripts/`](../scripts/) — one-shot utilities for backing up dev-tool configs (Antigravity CLI, Claude Code, Zed), recovering the Antigravity IDE launcher, fixing an AMD GPU monitor-wake bug, setting up SMB/mDNS network discovery, installing/managing gaming platforms (Battle.net, Hearthstone Deck Tracker, Lutris, Hongguo), and setting up Rust (plus Bevy deps), Go, and Docker dev toolchains. These are standalone; none are wired into `install.sh` or `apply.sh`, so run them directly when needed.
 
 ## Table of Contents
 
@@ -27,6 +27,10 @@ Reference for every script in [`scripts/`](../scripts/) — one-shot utilities f
 21. [launch-waydroid.sh](#launch-waydroidsh)
 22. [remove-android-waydroid.sh](#remove-android-waydroidsh)
 23. [fix-waydroid-firewall.sh](#fix-waydroid-firewallsh)
+24. [install-rust.sh](#install-rustsh)
+25. [install-bevy.sh](#install-bevysh)
+26. [install-golang.sh](#install-golangsh)
+27. [install-docker.sh](#install-dockersh)
 
 ---
 
@@ -705,3 +709,100 @@ launch-waydroid --help         # show help
 - This machine uses **ufw**, so the firewalld commands in generic Waydroid guides (the KDE/default path) do **not** apply here — the script picks the ufw path automatically. Don't run the firewalld `firewall-cmd` commands by hand on this box.
 - The rules are **idempotent** — re-running is safe (ufw skips rules it already has).
 - Rules persist across reboots; use `--revert` to cleanly remove them (the [remover](#remove-android-waydroidsh) does not touch firewall rules).
+
+---
+
+## install-rust.sh
+
+**Purpose**: Installs Rust + Cargo via `rustup` (from the sync repos, not the `curl | sh` installer) and puts `~/.cargo/bin` on `$PATH`.
+
+**Usage**:
+```bash
+./install-rust.sh
+```
+
+**What it does**:
+1. Installs `rustup` via `sudo pacman -S --needed --noconfirm`.
+2. Sets the default toolchain to `stable` and updates it (an existing `~/.rustup` is reused, not re-downloaded). The default profile includes `rustc`, `cargo`, `rustfmt`, and `clippy`.
+3. Writes `~/.config/environment.d/20-cargo-bin.conf` so `cargo install`ed tools in `~/.cargo/bin` are on `$PATH` for the niri session.
+4. Prints the installed versions and a quick start.
+
+**Prerequisites**: `sudo` access.
+
+**Warnings**:
+- The pacman `rustup` package **conflicts with `rust`** — if the distro `rust` package is installed, pacman will offer to replace it. That's intended.
+- `rustc`/`cargo` are proxies in `/usr/bin`, so they work immediately; only `~/.cargo/bin` needs a re-login to appear on `$PATH`.
+- To uninstall: `sudo pacman -Rns rustup && rm -rf ~/.rustup ~/.cargo ~/.config/environment.d/20-cargo-bin.conf`.
+
+---
+
+## install-bevy.sh
+
+**Purpose**: Installs the native libraries [Bevy](https://bevy.org) needs to build and run on CachyOS + niri (Wayland, AMD/Vulkan). Rust itself comes from [install-rust.sh](#install-rustsh).
+
+**Usage**:
+```bash
+./install-rust.sh   # first, if Rust isn't installed
+./install-bevy.sh
+```
+
+**What it does**:
+1. Exits with a pointer to `install-rust.sh` if `cargo` isn't found.
+2. Installs `pkgconf`, `clang`, and Bevy's Linux deps (`alsa-lib`, `systemd-libs` for libudev, `libxkbcommon`, `wayland`, `libx11`/`libxcursor`/`libxrandr`/`libxi`, `vulkan-icd-loader`) via `sudo pacman -S --needed --noconfirm`.
+3. Warns if no Vulkan ICD is installed, then prints the Bevy quick start, the recommended `[profile.dev]` settings, and an optional per-project mold linker config.
+
+**Prerequisites**: `sudo` access; Rust ([install-rust.sh](#install-rustsh)); a Vulkan driver for your GPU (`vulkan-radeon` on this machine).
+
+**Warnings**:
+- Most of these libraries are shared with the desktop, so there's no clean uninstall — `sudo pacman -Rns pkgconf clang` removes the build tools, and pacman refuses anything still in use.
+
+---
+
+## install-golang.sh
+
+**Purpose**: Installs Go and the standard dev tools (`gopls`, `delve`, `golangci-lint`) from the sync repos and puts `~/go/bin` on `$PATH`.
+
+**Usage**:
+```bash
+./install-golang.sh
+```
+
+**What it does**:
+1. Installs `go`, `gopls` (language server), `delve` (`dlv` debugger), and `golangci-lint` via `sudo pacman -S --needed --noconfirm`.
+2. Writes `~/.config/environment.d/30-go-bin.conf` so `go install`ed tools in `~/go/bin` are on `$PATH` for the niri session.
+3. Prints the installed versions, `GOPATH`, and a quick-start / common-commands cheat sheet.
+
+**Prerequisites**: `sudo` access.
+
+**Warnings**:
+- `GOPATH` stays at its default `~/go`; an existing module cache in `~/go/pkg/mod` is reused.
+- `go` itself is in `/usr/bin` and works immediately; only `~/go/bin` needs a re-login to appear on `$PATH`.
+- To uninstall: `sudo pacman -Rns go gopls delve golangci-lint && rm -rf ~/go ~/.cache/go-build ~/.config/environment.d/30-go-bin.conf`.
+
+---
+
+## install-docker.sh
+
+**Purpose**: Installs Docker Engine with the Compose and Buildx plugins, and lets the current user run `docker` without `sudo`.
+
+**Usage**:
+```bash
+./install-docker.sh
+```
+
+**What it does**:
+1. Installs `docker`, `docker-compose`, and `docker-buildx` via `sudo pacman -S --needed --noconfirm` (used as `docker compose` / `docker buildx`).
+2. Writes `/etc/docker/daemon.json` with container log rotation (3 × 10 MB) — **only if the file doesn't already exist**.
+3. Enables `docker.socket`, so the daemon starts on the first `docker` command rather than at boot.
+4. Adds `$USER` to the `docker` group (skipped if already a member).
+5. Prints versions, a `hello-world` smoke test, and the firewall / boot-start notes below.
+
+**Prerequisites**: `sudo` access.
+
+**Warnings**:
+- **Re-login** (or `newgrp docker`) before `docker` works without `sudo`.
+- The `docker` group is **root-equivalent** — that's the trade-off for sudo-less docker.
+- **ufw does not filter Docker-published ports.** `-p 8080:80` is reachable from the LAN even if ufw would block it. Bind dev services to localhost: `-p 127.0.0.1:8080:80` (Compose: `ports: ["127.0.0.1:8080:80"]`).
+- Docker's FORWARD rules sit ahead of ufw's, so container internet and the [Waydroid ufw rules](#fix-waydroid-firewallsh) coexist.
+- Containers with `--restart` policies only come back after reboot if you also `sudo systemctl enable docker.service`.
+- To uninstall: `sudo systemctl disable --now docker.socket docker.service`, `sudo pacman -Rns docker docker-compose docker-buildx`, `sudo rm -rf /var/lib/docker /var/lib/containerd /etc/docker`, `sudo gpasswd -d $USER docker`.
