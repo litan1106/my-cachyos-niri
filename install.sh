@@ -131,6 +131,8 @@ ok "Using: ${AUR_HELPER}"
 header "Official / CachyOS Packages"
 OFFICIAL_PACKAGES=(
     alacritty
+    foot
+    xdg-terminal-exec
     btop
     cliphist
     fastfetch
@@ -191,6 +193,13 @@ header "Deploying GTK3/4 Decoration Settings"
 deploy_file "${DOTFILES_DIR}/gtk-3.0/settings.ini"  "$HOME/.config/gtk-3.0/settings.ini"
 deploy_file "${DOTFILES_DIR}/gtk-4.0/settings.ini"  "$HOME/.config/gtk-4.0/settings.ini"
 ok "GTK decoration layout applied (minimize, maximize, close)."
+
+# ── 7b. Default Terminal (foot) ───────────────────────────────
+header "Setting Default Terminal → foot"
+deploy_file "${DOTFILES_DIR}/terminal/xdg-terminals.list"            "$HOME/.config/xdg-terminals.list"
+deploy_file "${DOTFILES_DIR}/terminal/environment.d/terminal.conf"   "$HOME/.config/environment.d/terminal.conf"
+deploy_file "${DOTFILES_DIR}/terminal/foot/foot.ini"                 "$HOME/.config/foot/foot.ini"
+ok "foot set as default terminal (xdg-terminal-exec + \$TERMINAL; re-login for \$TERMINAL)."
 
 # ── 8. Deploy Noctalia Shell Config ───────────────────────────
 header "Deploying Noctalia Shell Config → ~/.config/noctalia"
