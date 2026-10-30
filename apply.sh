@@ -10,6 +10,7 @@
 #   ./apply.sh gtk          → sync only GTK settings
 #   ./apply.sh qs           → sync only quickshell/noctalia-shell
 #   ./apply.sh noctalia     → sync only noctalia settings.json
+#   ./apply.sh terminal     → sync default-terminal settings (foot)
 #   ./apply.sh --dry        → show what would be copied, don't copy
 #   ./apply.sh --help       → show this help
 
@@ -33,7 +34,7 @@ for arg in "$@"; do
     case "$arg" in
         --dry)   DRY=true ;;
         --help|-h)
-            echo "Usage: ./apply.sh [niri|gtk|qs|noctalia|bash] [--dry]"
+            echo "Usage: ./apply.sh [niri|gtk|qs|noctalia|bash|terminal] [--dry]"
             echo ""
             echo "  (no args)   Sync all config areas"
             echo "  niri        Sync ~/.config/niri (config.kdl + cfg/)"
@@ -41,10 +42,11 @@ for arg in "$@"; do
             echo "  qs          Sync ~/.config/quickshell/noctalia-shell"
             echo "  noctalia    Sync ~/.config/noctalia/settings.json"
             echo "  bash        Sync ~/.bashrc and ~/.inputrc"
+            echo "  terminal    Sync foot.ini, xdg-terminals.list and environment.d/terminal.conf"
             echo "  --dry       Preview changes without applying"
             exit 0
             ;;
-        niri|gtk|qs|noctalia|bash) TARGETS+=("$arg") ;;
+        niri|gtk|qs|noctalia|bash|terminal) TARGETS+=("$arg") ;;
         *)
             echo -e "${RED}[ERROR] Unknown argument: $arg${NC}"
             echo "Run './apply.sh --help' for usage."
@@ -55,7 +57,7 @@ done
 
 # Default: sync everything
 if [ ${#TARGETS[@]} -eq 0 ]; then
-    TARGETS=(niri gtk qs noctalia bash)
+    TARGETS=(niri gtk qs noctalia bash terminal)
 fi
 
 # ── Helpers ──────────────────────────────────────────────────────
@@ -142,6 +144,16 @@ if [[ " ${TARGETS[*]} " == *" bash "* ]]; then
         [ -f "${REPO_DIR}/bash/.inputrc" ] && sync_file "${REPO_DIR}/bash/.inputrc" "$HOME/.inputrc"
         echo ""
     fi
+fi
+
+# ── Sync: Default terminal ───────────────────────────────────────
+if [[ " ${TARGETS[*]} " == *" terminal "* ]]; then
+    echo -e "${BLUE}[*] Syncing default terminal settings...${NC}"
+    sync_file "${REPO_DIR}/terminal/xdg-terminals.list" "$HOME/.config/xdg-terminals.list"
+    sync_file "${REPO_DIR}/terminal/environment.d/terminal.conf" \
+              "$HOME/.config/environment.d/terminal.conf"
+    sync_file "${REPO_DIR}/terminal/foot/foot.ini" "$HOME/.config/foot/foot.ini"
+    echo ""
 fi
 
 # ── Reload niri live ─────────────────────────────────────────────

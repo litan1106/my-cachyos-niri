@@ -66,6 +66,7 @@ OFFICIAL_PACKAGES=(
     "noctalia-shell"
     "noctalia-qs"
     "alacritty"
+    "foot"
     "tmux"
     "nautilus"
     "obsidian"

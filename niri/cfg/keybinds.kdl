@@ -76,11 +76,11 @@ binds {
     CTRL+ALT+Shift+Tab                  { focus-monitor-left; }
 
     // ─── System Controls (Omarchy Keymap) ───
-    Mod+CTRL+A                          hotkey-overlay-title="Audio Controls (wiremix)" { spawn "alacritty" "-e" "wiremix"; }
-    Mod+CTRL+B                          hotkey-overlay-title="Bluetooth Controls (bluetui)" { spawn "alacritty" "-e" "bluetui"; }
-    Mod+CTRL+W                          hotkey-overlay-title="Wifi Controls (impala)" { spawn "alacritty" "-e" "impala"; }
+    Mod+CTRL+A                          hotkey-overlay-title="Audio Controls (wiremix)" { spawn "foot" "wiremix"; }
+    Mod+CTRL+B                          hotkey-overlay-title="Bluetooth Controls (bluetui)" { spawn "foot" "bluetui"; }
+    Mod+CTRL+W                          hotkey-overlay-title="Wifi Controls (impala)" { spawn "foot" "impala"; }
     Mod+CTRL+S                          hotkey-overlay-title="Share Menu (LocalSend)" { spawn "localsend"; }
-    Mod+CTRL+T                          hotkey-overlay-title="Activity Monitor" { spawn "alacritty" "-e" "btop"; }
+    Mod+CTRL+T                          hotkey-overlay-title="Activity Monitor" { spawn "foot" "btop"; }
     Mod+CTRL+C                          hotkey-overlay-title="Interactive Capture" { screenshot; }
 
     // ─── Adjustments (Omarchy Keymap) ───
@@ -92,16 +92,16 @@ binds {
     XF86MonBrightnessDown               allow-when-locked=true { spawn-sh "qs -c noctalia-shell ipc call brightness decrease"; }
 
     // ─── Launching Applications (Omarchy Keymap) ───
-    Mod+Return                          hotkey-overlay-title="Open Terminal" { spawn "alacritty"; }
-    Mod+ALT+Return                      hotkey-overlay-title="Open Tmux Terminal" { spawn "alacritty" "-e" "tmux"; }
+    Mod+Return                          hotkey-overlay-title="Open Terminal" { spawn "foot"; }
+    Mod+ALT+Return                      hotkey-overlay-title="Open Tmux Terminal" { spawn "foot" "tmux"; }
     Mod+Shift+Return                    hotkey-overlay-title="Open Browser" { spawn "google-chrome-stable"; }
     Mod+Shift+ALT+B                     hotkey-overlay-title="Open Browser (Incognito)" { spawn "google-chrome-stable" "--incognito"; }
     Mod+Shift+F                         hotkey-overlay-title="File Manager" { spawn "nautilus"; }
     Mod+Shift+ALT+F                     hotkey-overlay-title="File Manager (CWD)" { spawn "nautilus"; }
     Mod+Shift+M                         hotkey-overlay-title="Open Spotify" { spawn "spotify"; }
-    Mod+Shift+ALT+M                     hotkey-overlay-title="Open Cliamp" { spawn "alacritty" "-e" "cliamp"; }
+    Mod+Shift+ALT+M                     hotkey-overlay-title="Open Cliamp" { spawn "foot" "cliamp"; }
     Mod+Shift+Slash                     hotkey-overlay-title="Open 1Password" { spawn "1password"; }
-    Mod+Shift+N                         hotkey-overlay-title="Open Neovim" { spawn "alacritty" "-e" "nvim"; }
+    Mod+Shift+N                         hotkey-overlay-title="Open Neovim" { spawn "foot" "nvim"; }
     Mod+Shift+C                         hotkey-overlay-title="Open HEY Calendar" { spawn "google-chrome-stable" "https://app.hey.com/calendar"; }
     Mod+Shift+E                         hotkey-overlay-title="Open HEY Mail" { spawn "google-chrome-stable" "https://app.hey.com/mail"; }
     Mod+Shift+A                         hotkey-overlay-title="Open ChatGPT" { spawn "google-chrome-stable" "https://chatgpt.com"; }
@@ -109,7 +109,7 @@ binds {
     Mod+Shift+G                         hotkey-overlay-title="Open Signal" { spawn "signal-desktop"; }
     Mod+Shift+Alt+G                     hotkey-overlay-title="Open WhatsApp" { spawn "google-chrome-stable" "https://web.whatsapp.com"; }
     Mod+Shift+Ctrl+G                    hotkey-overlay-title="Open Google Chat" { spawn "google-chrome-stable" "https://chat.google.com"; }
-    Mod+Shift+D                         hotkey-overlay-title="Open LazyDocker" { spawn "alacritty" "-e" "lazydocker"; }
+    Mod+Shift+D                         hotkey-overlay-title="Open LazyDocker" { spawn "foot" "lazydocker"; }
     Mod+Shift+O                         hotkey-overlay-title="Open Obsidian" { spawn "obsidian"; }
     Mod+Shift+W                         hotkey-overlay-title="Open Typora" { spawn "typora"; }
     Mod+Shift+X                         hotkey-overlay-title="Open X" { spawn "google-chrome-stable" "https://x.com"; }

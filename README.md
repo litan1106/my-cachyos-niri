@@ -35,6 +35,7 @@ dotfiles/
 │       └── Modules/Panels/Launcher/
 │           └── LauncherCore.qml  ← Custom Windows-style Start Menu power options layout
 ├── bash/                ← .bashrc / .inputrc synced by apply.sh
+├── terminal/            ← Default terminal (foot): foot/foot.ini + xdg-terminals.list + environment.d/terminal.conf
 ├── llm/                 ← Local LLM setup notes (llama.cpp, ROCm, …)
 ├── package-inventory/   ← inventory.md + pkg-export.sh package audit tooling
 ├── scripts/             ← Standalone utility scripts (backups, fixes, SMB setup)
@@ -108,6 +109,8 @@ Resolve any conflicts in `niri/cfg/keybinds.kdl` if a key you customised was als
 | Package | Purpose |
 |---|---|
 | `alacritty` | GPU-accelerated terminal |
+| `foot` | Default Wayland terminal (keybinds, launcher, xdg) |
+| `xdg-terminal-exec` | Opens `Terminal=true` apps in the default terminal (foot) |
 | `cliphist` | Wayland clipboard history backend |
 | `obsidian` | Local markdown knowledge base |
 | `udiskie` | User-session removable drive automounting |
@@ -157,7 +160,7 @@ Resolve any conflicts in `niri/cfg/keybinds.kdl` if a key you customised was als
 ### App Launchers
 | Hotkey | App |
 |---|---|
-| `Super + Return` | Terminal (Alacritty) |
+| `Super + Return` | Terminal (foot) |
 | `Super + Alt + Return` | Terminal + Tmux |
 | `Super + Shift + Return` / `Super + B` | Google Chrome |
 | `Super + Shift + Alt + B` | Chrome (Incognito) |
@@ -231,6 +234,9 @@ cp ~/.config/gtk-3.0/settings.ini     gtk-3.0/
 cp ~/.config/gtk-4.0/settings.ini     gtk-4.0/
 cp ~/.config/noctalia/settings.json   noctalia/
 cp ~/.config/noctalia/plugins.json    noctalia/
+cp ~/.config/xdg-terminals.list       terminal/
+cp ~/.config/environment.d/terminal.conf terminal/environment.d/
+cp ~/.config/foot/foot.ini             terminal/foot/
 cp ~/.config/quickshell/noctalia-shell/Modules/Panels/Launcher/LauncherCore.qml \
    quickshell/noctalia-shell/Modules/Panels/Launcher/LauncherCore.qml
 
