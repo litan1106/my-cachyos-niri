@@ -112,6 +112,20 @@ It matches the LG monitor by model, sets its Hyprland scale to 1.25, and puts th
 
 Open Noctalia settings with Super+Z to choose apps, wallpaper, and other local preferences. Noctalia v5 reads TOML from `~/.config/noctalia/`; GUI-managed `~/.local/state/noctalia/settings.toml` can override shared TOML. Run `noctalia config export` to inspect effective choices and `noctalia config validate` after edits. Review any export for private values before sharing it.
 
+### Omarchy theme picker
+
+Install the optional theme picker and twelve Omarchy palettes independently of the layout:
+
+```bash
+./install.sh --with-themes --dry-run
+./install.sh --with-themes
+noctalia msg panel-toggle my-cachyos-niri/omarchy-themes:picker
+```
+
+The picker shows color previews for Catppuccin, Catppuccin Latte, Everforest, Flexoki Light, Gruvbox, Kanagawa, Matte Black, Nord, Ristretto, Rose Pine, Solarized, and Tokyo Night. Selecting a card applies its palette and light or dark mode through Noctalia; CachyOS's enabled Noctalia templates then update supported apps. Wallpapers stay as the user chose them. The picker can also be added as an **Omarchy themes** shortcut in Noctalia's Control Center. To select from a terminal, run `noctalia msg plugin my-cachyos-niri/omarchy-themes:apply all set "Catppuccin Latte"`.
+
+The palettes are ports of Omarchy's color files, including the separate Solarized theme. The previews show those colors in a sample UI; they are not Omarchy wallpaper screenshots. The setup script backs up changed files and leaves unrelated palettes and plugins alone. See [noctalia-v5/omarchy-themes/README.md](noctalia-v5/omarchy-themes/README.md) for sources and regeneration details.
+
 The default installer keeps the CachyOS appearance. To install the optional top status bar with a CachyOS app launcher icon, workspaces, and active window in the center and the clock/date on the right, plus a bottom window dock with an Apps button and a separate icon for each open window:
 
 ```bash
@@ -147,6 +161,7 @@ After pulling or editing this repository, run `./apply.sh --dry-run` followed by
 
 - `hypr/config/my_*.lua`: behavior layered after the CachyOS defaults.
 - `noctalia-v5/zz-shared.toml`: optional Noctalia v5 layout and appearance.
+- `noctalia-v5/omarchy-themes/`: optional Omarchy palettes and Noctalia theme picker.
 - `install.sh`, `apply.sh`, and `scripts/install-hypr-v5.sh`: profile validation, backup, and deployment.
 - `scripts/migrate-niri-to-hypr.sh`: migration for the previous desktop setup.
 - [docs/scripts-guide.md](docs/scripts-guide.md): other setup and maintenance scripts.

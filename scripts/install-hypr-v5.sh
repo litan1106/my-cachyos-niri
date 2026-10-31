@@ -11,15 +11,17 @@ SKEL_NOCTALIA=/etc/skel/.config/noctalia/config.toml
 NOCTALIA_SOURCE="$REPO_DIR/noctalia-v5/zz-shared.toml"
 DRY_RUN=false
 WITH_LAYOUT=false
+WITH_THEMES=false
 
 usage() {
-    echo "Usage: ./install.sh [--profile hypr-v5] [--dry-run] [--with-layout]"
+    echo "Usage: ./install.sh [--profile hypr-v5] [--dry-run] [--with-layout] [--with-themes]"
 }
 
 for arg in "$@"; do
     case "$arg" in
         --dry-run|--dry) DRY_RUN=true ;;
         --with-layout) WITH_LAYOUT=true ;;
+        --with-themes) WITH_THEMES=true ;;
         --help|-h) usage; exit 0 ;;
         *) usage >&2; exit 2 ;;
     esac
@@ -139,4 +141,12 @@ if [[ "$DRY_RUN" == true ]]; then
 else
     noctalia config validate "$NOCTALIA_DIR"
     echo "Profile staged. Log into Hyprland (UWSM) from SDDM to test it."
+fi
+
+if [[ "$WITH_THEMES" == true ]]; then
+    if [[ "$DRY_RUN" == true ]]; then
+        "$REPO_DIR/scripts/setup-omarchy-themes.sh" --dry-run
+    else
+        "$REPO_DIR/scripts/setup-omarchy-themes.sh"
+    fi
 fi

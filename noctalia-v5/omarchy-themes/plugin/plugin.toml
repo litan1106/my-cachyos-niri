@@ -1,0 +1,28 @@
+id = "my-cachyos-niri/omarchy-themes"
+name = "Omarchy Themes"
+version = "1.0.0"
+plugin_api = 43
+author = "my-cachyos-niri"
+license = "MIT"
+dependencies = []
+tags = ["theming"]
+icon = "palette"
+description = "Preview and apply Omarchy color palettes in Noctalia."
+
+[[panel]]
+id = "picker"
+entry = "picker.luau"
+width = 920
+height = 660
+placement = "floating"
+position = "auto"
+keyboard_focus = "on_demand"
+dismiss_on_outside_click = true
+
+[[shortcut]]
+id = "open"
+entry = "shortcut.luau"
+
+[[service]]
+id = "apply"
+entry = "service.luau"

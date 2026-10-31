@@ -24,3 +24,6 @@ Export the resulting settings with `noctalia config export`, review them for
 private values, and keep machine-specific values outside this shared file. Use
 `noctalia config validate` after edits. GUI changes are stored separately and
 can override values in `zz-shared.toml`.
+
+For twelve selectable Omarchy palettes with color previews, install the separate
+[Omarchy theme picker](omarchy-themes/README.md) with `./install.sh --with-themes`.
