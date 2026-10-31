@@ -1,11 +1,12 @@
 # Noctalia v5 overlay
 
 `zz-shared.toml` is an optional overlay loaded after CachyOS's `config.toml`. It
-provides a bottom taskbar, top auto-hide dock, grid launcher, and Kanagawa dark
-theme. Install it with `./install.sh --with-layout`; the default installer keeps
-the CachyOS layout. A later run without the flag leaves an existing overlay in
-place. Move `~/.config/noctalia/zz-shared.toml` aside to return to the CachyOS
-layout.
+provides a top status bar with a CachyOS launcher icon, spaced workspaces, and
+active window in the center and the clock/date on the right, a bottom auto-hide
+dock with an Apps button, a grid launcher, and the Kanagawa dark theme. Install it with
+`./install.sh --with-layout`; the default installer keeps the CachyOS layout.
+A later run without the flag leaves an existing overlay in place. Move
+`~/.config/noctalia/zz-shared.toml` aside to return to the CachyOS layout.
 
 Set per-user choices in Noctalia Settings (Super+Z), such as pinned apps,
 wallpapers, widgets, and an avatar. The launcher and session menu use Noctalia

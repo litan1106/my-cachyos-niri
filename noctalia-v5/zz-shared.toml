@@ -2,15 +2,29 @@
 ui_scale = 1.25
 
 [bar.default]
-position = "bottom"
+position = "top"
 margin_edge = 0
 margin_ends = 0
 background_opacity = 0.93
 thickness = 35
 widget_spacing = 6
 start = []
-center = ["launcher", "taskbar", "workspaces"]
+center = ["launcher", "menu_gap", "workspaces", "window_gap", "active_window"]
 end = ["media", "tray", "notifications", "battery", "volume", "brightness", "clock", "control-center"]
+
+[widget.launcher]
+glyph = "brand-finder"
+custom_image = "/usr/share/icons/cachyos.svg"
+scale = 1.6
+capsule_padding = 0
+
+[widget.menu_gap]
+type = "spacer"
+length = 8
+
+[widget.window_gap]
+type = "spacer"
+length = 8
 
 [shell]
 font_family = "Adwaita Sans"
@@ -33,14 +47,15 @@ session_position = "center"
 
 [dock]
 enabled = true
-position = "top"
+position = "bottom"
 auto_hide = true
 reserve_space = false
-margin_edge = 0
+margin_edge = 8
 margin_ends = 0
 icon_size = 40
 show_running = true
-launcher_position = "end"
+show_dots = true
+launcher_position = "start"
 
 [theme]
 mode = "dark"

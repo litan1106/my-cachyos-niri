@@ -2,6 +2,14 @@ local mod = "SUPER"
 local noctalia = "noctalia msg "
 local launch = "uwsm app -- "
 
+hl.config({
+    decoration = {
+        active_opacity = 1,
+        inactive_opacity = 1,
+        fullscreen_opacity = 1,
+    },
+})
+
 -- CachyOS assigns these keys to other actions before this overlay loads.
 for _, key in ipairs({
     mod .. " + Escape",
@@ -49,3 +57,53 @@ hl.bind(mod .. " + CONTROL + I", hl.dsp.exec_cmd(noctalia .. "caffeine-toggle"))
 hl.bind(mod .. " + CONTROL + N", hl.dsp.exec_cmd(noctalia .. "nightlight-toggle"))
 hl.bind(mod .. " + CONTROL + comma", hl.dsp.exec_cmd(noctalia .. "notification-dnd-toggle"))
 hl.bind(mod .. " + SHIFT + Space", hl.dsp.exec_cmd(noctalia .. "bar-toggle"))
+
+hl.on("hyprland.start", function()
+    hl.exec_cmd("sh -c 'command -v hyprpm >/dev/null 2>&1 && hyprpm reload && hyprctl reload'")
+end)
+
+if hl.plugin and hl.plugin.hyprbars then
+    hl.window_rule({ match = { class = "^org\\.gnome\\..*$" }, ["hyprbars:no_bar"] = true })
+
+    hl.config({
+        plugin = {
+            hyprbars = {
+                bar_height = 30,
+                bar_color = "rgb(2a2a37)",
+                bar_buttons_alignment = "left",
+                bar_button_padding = 8,
+                icon_on_hover = true,
+                on_double_click = [[hyprctl dispatch 'hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" })']],
+            },
+        },
+    })
+
+    hl.plugin.hyprbars.add_button({
+        bg_color = "rgb(ff5f57)",
+        fg_color = "rgb(4a1916)",
+        size = 13,
+        icon = "×",
+        action = [[hyprctl dispatch 'hl.dsp.window.close()']],
+    })
+    hl.plugin.hyprbars.add_button({
+        bg_color = "rgb(febc2e)",
+        fg_color = "rgb(533a07)",
+        size = 13,
+        icon = "−",
+        action = [[hyprctl --batch 'dispatch hl.dsp.window.tag({ tag = "minimized" }); dispatch hl.dsp.window.move({ workspace = "special:minimized", follow = false })']],
+    })
+    hl.plugin.hyprbars.add_button({
+        bg_color = "rgb(28c840)",
+        fg_color = "rgb(103a1a)",
+        size = 13,
+        icon = "+",
+        action = [[hyprctl dispatch 'hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" })']],
+    })
+
+    hl.bind(mod .. " + SHIFT + M", function()
+        if hl.get_workspace("special:minimized") then
+            hl.dispatch(hl.dsp.window.move({ workspace = hl.get_active_workspace(), window = "tag:minimized" }))
+            hl.dispatch(hl.dsp.window.clear_tags({ window = "tag:minimized" }))
+        end
+    end)
+end
