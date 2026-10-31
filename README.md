@@ -62,6 +62,52 @@ test ! -e "$config_dir/niri" && cp -a "$backup_dir/user-config/niri" "$config_di
 
 Inspect the other saved files before copying them to their original locations. Compare `system/pacman.conf` with the current `/etc/pacman.conf` before restoring any package settings. Restoring the old desktop also requires reinstalling its packages and selecting its session in the display manager.
 
+## Transfer VS Code configuration
+
+Use the standalone backup script for Linux-to-Linux snapshots of the Default
+profile and all registered user profiles:
+
+```bash
+# Source machine: create a timestamped archive in ~/backups/vscode/
+./scripts/backup-vscode.sh
+./scripts/backup-vscode.sh --list
+
+# Copy the printed archive path to the other machine, for example with scp.
+# Destination machine: inspect changes, then close VS Code and pause Settings Sync.
+./scripts/backup-vscode.sh --diff ~/vscode-backup-TIMESTAMP.zip
+./scripts/backup-vscode.sh --restore ~/vscode-backup-TIMESTAMP.zip
+```
+
+Requires Python 3 and the `code` CLI. Includes settings, keybindings, user tasks,
+snippets, profile names/icons and inheritance for those resources, plus extension
+IDs and versions. Restore registers profiles and reinstalls extensions from the
+Marketplace, which requires network access. Unavailable versions, private/VSIX
+extensions, and extension installation failures are reported; configuration stays
+restored, and the command exits with a failure status. Extension enablement and
+prerelease-channel preferences are not transferred.
+
+MCP configuration, authentication, history, workspace state, extension binaries,
+and machine-specific profile associations are excluded. Project `.vscode/` files
+stay with their repositories. Legacy inline MCP servers in `settings.json` block
+backup and restore; migrate those servers to `mcp.json` in VS Code first. Other
+settings are copied as written, so review absolute
+paths and any credentials you have put in settings before transferring an archive.
+
+Restore previews its writes and asks for confirmation. Before changing an existing
+configuration, it must successfully create a `vscode-pre-restore-*.zip` safety
+snapshot. Profiles are matched by name; existing extra files, extensions, and local
+MCP configuration are retained. The safety archive can be restored with the same
+command to recover overwritten configuration; restore does not delete added files,
+profiles, or extensions. `--diff` exits 0 for no differences, 1 for differences, and
+2 for errors. Config and snippet symlinks are rejected rather than followed.
+
+Environment overrides: `VSCODE_CONFIG_DIR` is the **data root** containing `User/`
+(default `$XDG_CONFIG_HOME/Code`, falling back to `~/.config/Code`), `VSCODE_EXTENSIONS_DIR` defaults to
+`~/.vscode/extensions`, `CODE_BIN` defaults to `code`, and `BACKUP_DIR` defaults to
+`~/backups/vscode`. Use `--help` for all commands. Keep backups outside this Git
+repository. If a custom `code` wrapper overrides profile or directory arguments,
+set `CODE_BIN` to the direct launcher (on Arch/CachyOS, `/usr/share/code/bin/code`).
+
 ## Customize the setup
 
 ### Shortcuts
