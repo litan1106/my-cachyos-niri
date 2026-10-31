@@ -101,6 +101,15 @@ Super is the Windows/Command key. The full custom list is in `my_desktop.lua`; o
 
 Configure each machine's displays in `~/.config/hypr/config/monitors.lua` and monitor assignments in `variables.lua`; configure keyboard and pointer input in `inputs.lua`. These machine-specific files are not deployed by this repository. Use `hyprctl monitors` to inspect connected outputs.
 
+For the LG ultrawide profile, run the optional setup script on the machine with that display:
+
+```bash
+./scripts/setup-lg-ultrawide.sh --dry-run
+./scripts/setup-lg-ultrawide.sh
+```
+
+It matches the LG monitor by model, sets its Hyprland scale to 1.25, and puts the Noctalia UI scale in a local `zzzz-lg-ultrawide.toml` overlay. The shared installer does not run this script.
+
 Open Noctalia settings with Super+Z to choose apps, wallpaper, and other local preferences. Noctalia v5 reads TOML from `~/.config/noctalia/`; GUI-managed `~/.local/state/noctalia/settings.toml` can override shared TOML. Run `noctalia config export` to inspect effective choices and `noctalia config validate` after edits. Review any export for private values before sharing it.
 
 The default installer keeps the CachyOS appearance. To install the optional top status bar with a CachyOS app launcher icon, workspaces, and active window in the center and the clock/date on the right, plus a bottom window dock with an Apps button and a separate icon for each open window:

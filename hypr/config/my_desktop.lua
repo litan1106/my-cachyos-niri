@@ -72,7 +72,7 @@ if hl.plugin and hl.plugin.hyprbars then
                 bar_color = "rgb(2a2a37)",
                 bar_buttons_alignment = "left",
                 bar_button_padding = 8,
-                icon_on_hover = true,
+                icon_on_hover = false,
                 on_double_click = [[hyprctl dispatch 'hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" })']],
             },
         },
@@ -80,22 +80,22 @@ if hl.plugin and hl.plugin.hyprbars then
 
     hl.plugin.hyprbars.add_button({
         bg_color = "rgb(ff5f57)",
-        fg_color = "rgb(4a1916)",
-        size = 13,
+        fg_color = "rgb(111111)",
+        size = 18,
         icon = "×",
         action = [[hyprctl dispatch 'hl.dsp.window.close()']],
     })
     hl.plugin.hyprbars.add_button({
         bg_color = "rgb(febc2e)",
-        fg_color = "rgb(533a07)",
-        size = 13,
+        fg_color = "rgb(111111)",
+        size = 18,
         icon = "−",
         action = [[hyprctl --batch 'dispatch hl.dsp.window.tag({ tag = "minimized" }); dispatch hl.dsp.window.move({ workspace = "special:minimized", follow = false })']],
     })
     hl.plugin.hyprbars.add_button({
         bg_color = "rgb(28c840)",
-        fg_color = "rgb(103a1a)",
-        size = 13,
+        fg_color = "rgb(111111)",
+        size = 18,
         icon = "+",
         action = [[hyprctl dispatch 'hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" })']],
     })

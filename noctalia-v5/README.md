@@ -16,6 +16,10 @@ Set per-user choices in Noctalia Settings (Super+Z), such as pinned apps,
 wallpapers, widgets, and an avatar. The launcher and session menu use Noctalia
 v5's built-in UI.
 
+Display-specific UI scale belongs in a local overlay. On the LG ultrawide,
+`./scripts/setup-lg-ultrawide.sh` sets it in `~/.config/noctalia/zzzz-lg-ultrawide.toml`;
+the shared installer does not run that script. Preview it with `--dry-run`.
+
 Export the resulting settings with `noctalia config export`, review them for
 private values, and keep machine-specific values outside this shared file. Use
 `noctalia config validate` after edits. GUI changes are stored separately and

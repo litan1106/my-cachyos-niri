@@ -7,7 +7,6 @@ Core window manager settings, desktop shell components, fonts, networking, audio
 
 | Package | Source | Sync Status | Note / Purpose |
 |---|---|---|---|
-| `cachyos-niri-noctalia` | Repo | Excluded | Synced separately via CachyOS settings packages. |
 | `alacritty` | Repo | **Synced** (`OFFICIAL_PACKAGES`) | Standard GPU-accelerated terminal emulator. |
 | `cliphist` | Repo | **Synced** (`OFFICIAL_PACKAGES`) | Wayland clipboard history manager. |
 | `wl-clipboard` | Repo | **Synced** (`OFFICIAL_PACKAGES`) | Wayland clipboard utilities (needed by Noctalia clipboard provider). |

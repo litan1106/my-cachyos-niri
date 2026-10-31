@@ -98,7 +98,7 @@ noctalia config validate
 
 Each old package should print `Removed`. If you changed SDDM autologin, reboot once more and confirm it opens the Hyprland session.
 
-Set monitor assignments in `~/.config/hypr/config/variables.lua`, monitor modes and scale in `monitors.lua`, and keyboard/pointer settings in `inputs.lua`. Open Noctalia settings with Super+Z for local app pins, wallpaper, and widgets. See the [README](../README.md#customize-the-setup) for the shortcut table and configuration workflow.
+Set monitor assignments in `~/.config/hypr/config/variables.lua`, monitor modes and scale in `monitors.lua`, and keyboard/pointer settings in `inputs.lua`. For the LG HDR WQHD ultrawide, run `./scripts/setup-lg-ultrawide.sh --dry-run` and then `./scripts/setup-lg-ultrawide.sh` on that machine. The shared installer does not apply display-specific scaling. Open Noctalia settings with Super+Z for local app pins, wallpaper, and widgets. See the [README](../README.md#customize-the-setup) for the shortcut table and configuration workflow.
 
 ## Find or restore a backup
 
