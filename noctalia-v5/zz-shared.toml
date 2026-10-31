@@ -1,0 +1,48 @@
+[accessibility]
+ui_scale = 1.25
+
+[bar.default]
+position = "bottom"
+margin_edge = 0
+margin_ends = 0
+background_opacity = 0.93
+thickness = 35
+widget_spacing = 6
+start = []
+center = ["launcher", "taskbar", "workspaces"]
+end = ["media", "tray", "notifications", "battery", "volume", "brightness", "clock", "control-center"]
+
+[shell]
+font_family = "Adwaita Sans"
+
+[shell.launcher]
+layout = "full"
+default_view = "all"
+app_grid = true
+categories = true
+sort_by_usage = true
+search_position = "bottom"
+show_session_button = true
+
+[shell.panel]
+launcher_placement = "floating"
+launcher_position = "center"
+control_center_placement = "attached"
+session_placement = "floating"
+session_position = "center"
+
+[dock]
+enabled = true
+position = "top"
+auto_hide = true
+reserve_space = false
+margin_edge = 0
+margin_ends = 0
+icon_size = 40
+show_running = true
+launcher_position = "end"
+
+[theme]
+mode = "dark"
+source = "builtin"
+builtin = "Kanagawa"

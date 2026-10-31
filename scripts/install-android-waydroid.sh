@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Install Waydroid — Android apps as native Wayland windows on CachyOS + niri.
+# Install Waydroid — Android apps as native Wayland windows on CachyOS + Hyprland.
 # Requires sudo (package install, container service, first-time image init).
 #
 # Notes for this machine (verified):

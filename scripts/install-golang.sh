@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Install Go and its standard dev tools on CachyOS + niri. Requires sudo for
+# Install Go and its standard dev tools on CachyOS + Hyprland. Requires sudo for
 # the pacman step.
 #
 # Notes for this machine (verified):
@@ -23,7 +23,7 @@ sudo pacman -S --needed --noconfirm \
   go gopls delve golangci-lint
 
 # Tools installed with `go install` land in $(go env GOPATH)/bin. Put it on
-# PATH for the niri session. environment.d expands ${HOME}/${PATH} (not ~).
+# PATH for the systemd user environment. environment.d expands ${HOME}/${PATH} (not ~).
 conf_dir="$HOME/.config/environment.d"
 conf="$conf_dir/30-go-bin.conf"
 mkdir -p "$conf_dir"

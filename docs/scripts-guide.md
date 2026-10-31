@@ -1,6 +1,6 @@
 # Scripts Guide
 
-Reference for every script in [`scripts/`](../scripts/) — one-shot utilities for backing up dev-tool configs (Antigravity CLI, Claude Code, Zed), fixing an AMD GPU monitor-wake bug, setting up SMB/mDNS network discovery, installing/managing gaming platforms (Battle.net, Hearthstone Deck Tracker, Lutris, Hongguo), and setting up Rust (plus Bevy deps), Go, and Docker dev toolchains. These are standalone; none are wired into `install.sh` or `apply.sh`, so run them directly when needed.
+Reference for setup and maintenance utilities in [`scripts/`](../scripts/) — one-shot utilities for backing up dev-tool configs (Antigravity CLI, Claude Code, Zed), fixing an AMD GPU monitor-wake bug, setting up SMB/mDNS network discovery, installing/managing gaming platforms (Battle.net, Hearthstone Deck Tracker, Lutris, Hongguo), and setting up Rust (plus Bevy deps), Go, and Docker dev toolchains. The desktop profile installer uses `install-hypr-v5.sh`; run the other utilities directly when needed. See the [README](../README.md) for desktop installation and migration.
 
 ## Table of Contents
 
@@ -147,7 +147,7 @@ Reference for every script in [`scripts/`](../scripts/) — one-shot utilities f
 
 ## fix-monitor-wake.sh
 
-**Purpose**: Fixes a black-screen-on-wake bug affecting AMD RX 9060 XT (RDNA 4 / navi48) GPUs over HDMI under niri/Wayland, caused by an `amdgpu` `REG_WAIT` timeout on `optc401_disable_crtc` during DPMS off/on.
+**Purpose**: Applies a workaround for a black-screen-on-wake issue observed on an AMD RX 9060 XT (RDNA 4 / navi48) over HDMI in a previous Wayland session, involving an `amdgpu` `REG_WAIT` timeout on `optc401_disable_crtc` during DPMS off/on. Test whether it is needed in Hyprland.
 
 **Usage**:
 ```bash
@@ -224,7 +224,7 @@ Exits 1 immediately if not run as root.
 - The installer runs in the background and logs to `/tmp/battlenet-installer.log` — it does **not** block the script's completion. The script prints instructions for launching Battle.net after installation finishes (which may take several minutes).
 - If a partial prefix is detected (directory exists but `Launcher.exe` is missing), the script will ask for confirmation to wipe it before proceeding. This is necessary because Battle.net's installer cannot resume from a partial state.
 - GE-Proton is auto-fetched and cached by umu-launcher on first launch; no manual download is needed.
-- A niri window rule for Battle.net lives in `niri/cfg/rules.kdl` — its matchers may need verification after the first launch to ensure proper window handling.
+- Test Battle.net window handling in Hyprland and configure a window rule if needed.
 
 ---
 
@@ -425,7 +425,7 @@ HONGGUO_INSTALLER_URL="https://.../hongguo-<ver>-windows-x86_64-setup.exe" ./ins
 **Warnings**:
 - The download URL is **pinned to a specific version** (unlike Battle.net's stable vendor URL). Override `$HONGGUO_INSTALLER_URL` for newer builds, or edit the default in the script. To update, delete the cached `~/.cache/cachyos-windows/hongguo-*-setup.exe` and re-run.
 - Extraction expects a `backend/` tree inside the installer (checked for `server.py`). If a future build changes that layout, the script aborts with a hint to inspect `7z l <installer>`.
-- The niri window rule for Hongguo (`niri/cfg/rules.kdl`) matches `app-id=hongguo` — stable because the launcher opens the UI with `--class=hongguo`. Confirmed working; adjust the sizing there if you prefer tiled/other dimensions.
+- The launcher opens the UI with `--class=hongguo`. Test its window handling in Hyprland and configure a window rule if needed.
 - This is an unofficial, reverse-engineered FQNovel client — treat it as such. **Read the investigation deep-dive under [launch-hongguo.sh](#launch-hongguosh) to understand what's actually running.** The Android app via Waydroid ([install-android-waydroid.sh](#install-android-waydroidsh)) remains an alternative.
 
 ---
@@ -536,23 +536,23 @@ source ./install-gpu-lib32.sh && install_gpu_lib32
 
 ## setup-local-bin-path.sh
 
-**Purpose**: Puts `~/.local/bin` on `PATH` the best-practice way for a systemd-managed niri session (the model CachyOS uses: SDDM → `niri-session` → `systemd --user`). Without this, user-installed launchers such as `launch-battlenet` don't resolve by name, because CachyOS/Arch only add `/usr/local/bin` to `PATH` by default.
+**Purpose**: Puts `~/.local/bin` on `PATH` through the systemd user environment for a graphical session. Without this, user-installed launchers such as `launch-battlenet` don't resolve by name, because CachyOS/Arch only add `/usr/local/bin` to `PATH` by default.
 
 > `install-gaming-battlenet.sh` **sources and runs this automatically** (it's the only installer that puts a command in `~/.local/bin`), so you normally don't need to run it by hand. Run it standalone only to add the `--with-bashrc` fallback, or on a machine where you want `~/.local/bin` on PATH independent of the gaming scripts.
 
 **Usage**:
 ```bash
-./setup-local-bin-path.sh                # environment.d only (niri + GUI + in-niri terminals)
+./setup-local-bin-path.sh                # environment.d for the systemd user environment
 ./setup-local-bin-path.sh --with-bashrc  # also add a ~/.bashrc fallback for TTY/SSH sessions
 ```
 
 **What it does**:
 1. Ensures `~/.local/bin` exists.
 2. Warns if `/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator` is missing (meaning the session isn't systemd-managed and `environment.d` won't be honored).
-3. Writes `~/.config/environment.d/10-local-bin.conf` with `PATH=${HOME}/.local/bin:${PATH}`. This is read by the systemd user manager at login and reaches niri, every app launched from the menu, and terminals opened inside niri (they inherit the session environment). Overwriting is idempotent — the file *is* the desired state.
+3. Writes `~/.config/environment.d/10-local-bin.conf` with `PATH=${HOME}/.local/bin:${PATH}`. This is read by the systemd user manager and passed to processes that inherit its environment. Overwriting is idempotent — the file *is* the desired state.
 4. With `--with-bashrc`, appends a duplicate-guarded `export PATH` to `~/.bashrc` for bare TTY / SSH shells, which don't inherit the graphical session environment.
 
-**Prerequisites**: A systemd-managed Wayland session (niri via `niri-session`, the CachyOS default). `bash` for the optional `--with-bashrc` fallback.
+**Prerequisites**: A systemd user session with the environment.d generator. `bash` for the optional `--with-bashrc` fallback.
 
 **Warnings**:
 - `environment.d` applies on the **next re-login** (the user manager reads it at session start). For the current terminal, run `export PATH="$HOME/.local/bin:$PATH"` once.
@@ -562,7 +562,7 @@ source ./install-gpu-lib32.sh && install_gpu_lib32
 
 ## install-android-waydroid.sh
 
-**Purpose**: Installs Waydroid (Android via LXC) on CachyOS + niri so Android apps run as native Wayland windows. This script is CachyOS-specific: the kernel ships `binder` built-in, so no DKMS/kernel module steps are needed — the blocker that stops Waydroid on other distros is already solved here.
+**Purpose**: Installs Waydroid (Android via LXC) on CachyOS + Hyprland so Android apps run as native Wayland windows. This script is CachyOS-specific: the kernel ships `binder` built-in, so no DKMS/kernel module steps are needed — the blocker that stops Waydroid on other distros is already solved here.
 
 **Usage**:
 ```bash
@@ -591,7 +591,7 @@ source ./install-gpu-lib32.sh && install_gpu_lib32
 - **The CachyOS kernel has `binder` built in** — no `modprobe` step or binder DKMS is needed or present. Do not add it.
 - The first boot can take a moment while the LXC container initializes and the Android system starts.
 - **GAPPS device registration required** (if chosen): After the first boot, read the GSF / Android ID and register it at `https://www.google.com/android/uncertified`. Until you do, Google Play will refuse to run. The registration command is printed when the script finishes; re-run it from a Waydroid session shell.
-- **niri window rules are best-guess matchers** — verify them after first launch via `niri msg windows` and adjust `niri/cfg/rules.kdl` if needed. See the Battle.net rules in that file for the commented-template style.
+- Test Waydroid window handling in Hyprland and configure window rules if needed.
 
 ---
 
@@ -617,7 +617,7 @@ launch-waydroid --help         # show help
 **Warnings**:
 - The first session can take a moment to boot the LXC container. Subsequent launches are faster.
 - Auto-generated per-app shortcuts appear in your app menu once you install Android apps via the full UI or Play Store.
-- Multi-window apps carry an app-id like `waydroid.<package>` — these are handled by the niri window rules (see [install-android-waydroid.sh](#install-android-waydroidsh) notes on rule verification).
+- Multi-window apps can carry an app-id like `waydroid.<package>`. Inspect the window in Hyprland before configuring any matching rule.
 
 ---
 
@@ -690,7 +690,7 @@ launch-waydroid --help         # show help
 **What it does**:
 1. Installs `rustup` via `sudo pacman -S --needed --noconfirm`.
 2. Sets the default toolchain to `stable` and updates it (an existing `~/.rustup` is reused, not re-downloaded). The default profile includes `rustc`, `cargo`, `rustfmt`, and `clippy`.
-3. Writes `~/.config/environment.d/20-cargo-bin.conf` so `cargo install`ed tools in `~/.cargo/bin` are on `$PATH` for the niri session.
+3. Writes `~/.config/environment.d/20-cargo-bin.conf` so `cargo install`ed tools in `~/.cargo/bin` are on `$PATH` in the systemd user environment.
 4. Prints the installed versions and a quick start.
 
 **Prerequisites**: `sudo` access.
@@ -704,7 +704,7 @@ launch-waydroid --help         # show help
 
 ## install-bevy.sh
 
-**Purpose**: Installs the native libraries [Bevy](https://bevy.org) needs to build and run on CachyOS + niri (Wayland, AMD/Vulkan). Rust itself comes from [install-rust.sh](#install-rustsh).
+**Purpose**: Installs the native libraries [Bevy](https://bevy.org) needs to build and run on CachyOS + Hyprland (Wayland, AMD/Vulkan). Rust itself comes from [install-rust.sh](#install-rustsh).
 
 **Usage**:
 ```bash
@@ -735,7 +735,7 @@ launch-waydroid --help         # show help
 
 **What it does**:
 1. Installs `go`, `gopls` (language server), `delve` (`dlv` debugger), and `golangci-lint` via `sudo pacman -S --needed --noconfirm`.
-2. Writes `~/.config/environment.d/30-go-bin.conf` so `go install`ed tools in `~/go/bin` are on `$PATH` for the niri session.
+2. Writes `~/.config/environment.d/30-go-bin.conf` so `go install`ed tools in `~/go/bin` are on `$PATH` in the systemd user environment.
 3. Prints the installed versions, `GOPATH`, and a quick-start / common-commands cheat sheet.
 
 **Prerequisites**: `sudo` access.

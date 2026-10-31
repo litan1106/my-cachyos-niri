@@ -1,4 +1,4 @@
-/* Lock header bar height so focused/unfocused state doesn't cause window resize in niri */
+/* Keep header bar height stable when focus changes. */
 headerbar,
 .titlebar {
     min-height: 46px;
