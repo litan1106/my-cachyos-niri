@@ -8,14 +8,14 @@ This repository contains a highly optimized, developer-centric **Niri Window Man
 
 * **Tiling & Grouping**: Niri's scrollable infinite layout meets Omarchy-style keyboard window stacking and tabbed display controls.
 * **Unified Controls**: Supercharged window navigation, resizing, and swapping via Vim keys and Arrows.
-* **App Ecosystem**: Integration with terminal-centric apps (Tmux, Antigravity IDE, Lazydocker) and standard modern developer tools (Google Chrome, Nautilus, Obsidian, Typora, Claude Desktop, Codex Desktop, Antigravity App).
+* **App Ecosystem**: Integration with terminal-centric apps (Tmux, Neovim, Lazydocker) and standard modern developer tools (Google Chrome, Nautilus, Obsidian, Typora, Claude Desktop, ChatGPT Desktop, Antigravity App).
 * **System Shell**: Tailored to run natively with `noctalia-shell` and CachyOS defaults.
 
 ---
 
 ## 📦 Package Management Setup
 
-The setup automatically splits package syncs between the core **Arch/CachyOS official repositories** and **custom AUR (Arch User Repository) packages** using `yay` (or `paru`).
+The setup installs core and available prebuilt desktop packages with `pacman`, and the remaining desktop packages from upstream binary releases with `yay` (or `paru`). All agent CLIs use official shell installers before desktop apps are installed.
 
 ### 1. Official & CachyOS Repository Packages
 These packages are installed natively via `pacman -S`:
@@ -25,13 +25,20 @@ These packages are installed natively via `pacman -S`:
 * **`nautilus`** (File Manager)
 * **`obsidian`** (Local markdown knowledge base)
 
-### 2. Custom AUR Packages
-These custom packages are installed from the AUR via your AUR helper (`yay` / `paru`):
+### 2. Standalone agent CLIs
+These CLIs are installed before desktop apps:
+* **Claude Code** ([official installer](https://code.claude.com/docs/en/setup) to `~/.local/bin`)
+* **Codex** ([standalone installer](https://chatgpt.com/codex/install.sh) to `~/.local/bin`)
+* **OpenCode V2** ([standalone installer](https://opencode.ai/v2/install) to `~/.opencode/bin`)
+* **Antigravity CLI** ([official installer](https://antigravity.google/download) to `~/.local/bin`)
+
+The installer removes package-managed versions of these CLIs after all four standalone installations succeed.
+
+### 3. Desktop and other custom packages
 * **`google-chrome`** (Web Browser)
-* **`antigravity-ide`** (Default developer editor IDE)
+* **`megasync-bin`** (MEGA cloud sync client)
 * **`antigravity`** (Antigravity application)
-* **`claude-desktop-bin`** (Claude desktop client application)
-* **`openai-codex-desktop`** (Codex desktop app)
+* **`claude-desktop`** / **`chatgpt-desktop-bin`** (prebuilt repo desktop apps)
 * **`typora`** (Markdown editor)
 
 ---
@@ -94,7 +101,7 @@ sudo ./scripts/setup_smb_discovery.sh
 | `Super + Shift + Return` / `Super + B` | Open Browser (Google Chrome) |
 | `Super + Shift + Alt + B` | Open Browser in Incognito Mode (Google Chrome) |
 | `Super + Shift + F` / `Super + E` | Open File Manager (Nautilus) |
-| `Super + Shift + N` | Open **Antigravity IDE** |
+| `Super + Shift + N` | Open **Neovim** |
 | `Super + Shift + A` | Open **Claude Desktop** |
 | `Super + Shift + Alt + A` | Open **Codex Desktop** |
 | `Super + Shift + G` | Open **Antigravity App** |

@@ -1,75 +1,41 @@
 # Scripts Guide
 
-Reference for every script in [`scripts/`](../scripts/) — one-shot utilities for backing up dev-tool configs (Antigravity CLI, Claude Code, Zed), recovering the Antigravity IDE launcher, fixing an AMD GPU monitor-wake bug, setting up SMB/mDNS network discovery, installing/managing gaming platforms (Battle.net, Hearthstone Deck Tracker, Lutris, Hongguo), and setting up Rust (plus Bevy deps), Go, and Docker dev toolchains. These are standalone; none are wired into `install.sh` or `apply.sh`, so run them directly when needed.
+Reference for every script in [`scripts/`](../scripts/) — one-shot utilities for backing up dev-tool configs (Antigravity CLI, Claude Code, Zed), fixing an AMD GPU monitor-wake bug, setting up SMB/mDNS network discovery, installing/managing gaming platforms (Battle.net, Hearthstone Deck Tracker, Lutris, Hongguo), and setting up Rust (plus Bevy deps), Go, and Docker dev toolchains. These are standalone; none are wired into `install.sh` or `apply.sh`, so run them directly when needed.
 
 ## Table of Contents
 
-1. [antigravity-restore.sh](#antigravity-restoresh)
-2. [backup-antigravity.sh](#backup-antigravitysh)
-3. [backup-claude.sh](#backup-claudesh)
-4. [backup-zed.sh](#backup-zedsh)
-5. [fix-monitor-wake.sh](#fix-monitor-wakesh)
-6. [setup_smb_discovery.sh](#setup_smb_discoverysh)
-7. [install-gaming-battlenet.sh](#install-gaming-battlenetsh)
-8. [launch-battlenet.sh](#launch-battlenetsh)
-9. [remove-gaming-battlenet.sh](#remove-gaming-battlenetsh)
-10. [install-gaming-hdt.sh](#install-gaming-hdtsh)
-11. [launch-hdt.sh](#launch-hdtsh)
-12. [remove-gaming-hdt.sh](#remove-gaming-hdtsh)
-13. [install-gaming-lutris.sh](#install-gaming-lutrissh)
-14. [remove-gaming-lutris.sh](#remove-gaming-lutrissh)
-15. [install-hongguo.sh](#install-hongguosh)
-16. [launch-hongguo.sh](#launch-hongguosh)
-17. [remove-hongguo.sh](#remove-hongguosh)
-18. [install-gpu-lib32.sh](#install-gpu-lib32sh)
-19. [setup-local-bin-path.sh](#setup-local-bin-pathsh)
-20. [install-android-waydroid.sh](#install-android-waydroidsh)
-21. [launch-waydroid.sh](#launch-waydroidsh)
-22. [remove-android-waydroid.sh](#remove-android-waydroidsh)
-23. [fix-waydroid-firewall.sh](#fix-waydroid-firewallsh)
-24. [install-rust.sh](#install-rustsh)
-25. [install-bevy.sh](#install-bevysh)
-26. [install-golang.sh](#install-golangsh)
-27. [install-docker.sh](#install-dockersh)
-
----
-
-## antigravity-restore.sh
-
-**Purpose**: Fixes the Antigravity 2.0 `app.asar` launcher hijack and migrates settings/extensions from the old "Antigravity" profile into the "Antigravity IDE" profile.
-
-This script is the tool behind [`antigravity-recovery-guide.md`](antigravity-recovery-guide.md) — see that guide for the full explanation of *why* the hijack happens, manual step-by-step equivalents, and the path reference table. This section only covers invocation.
-
-**Usage**:
-```bash
-./antigravity-restore.sh            # interactive menu (default)
-./antigravity-restore.sh toggle     # toggle IDE ↔ 2.0 launcher only
-./antigravity-restore.sh migrate    # migrate settings + extensions only
-./antigravity-restore.sh all        # toggle + migrate (recommended)
-./antigravity-restore.sh ide-only   # toggle + migrate + archive the 2.0 profile
-./antigravity-restore.sh backup     # pre-update snapshot of configs
-./antigravity-restore.sh status     # show current launcher/config state
-```
-
-**What it does** (per command):
-- `toggle` — renames `/opt/Antigravity/resources/app.asar` ↔ `app.asar.bak` (requires `sudo`) to switch which launcher is active. If already in IDE mode, asks `[y/N]` before switching back to 2.0.
-- `migrate` — copies `~/.config/Antigravity/` → `~/.config/Antigravity IDE/` (via `rsync` if available, else `cp -r`), then symlinks `~/.antigravity-ide/extensions` → `~/.antigravity/extensions` (backing up any existing non-empty destination first as `extensions.bak.<timestamp>`).
-- `ide-only` — runs `toggle` + `migrate`, then **moves** (not copies) `~/.config/Antigravity/` to a timestamped archive dir, making the IDE profile the sole active one.
-- `backup` — snapshots both config dirs, the extension lists/manifests of both profiles, and a SHA-256 of `app.asar` into `~/.antigravity-backup-<timestamp>/`.
-- `status` — prints launcher mode and the state of all relevant files/dirs; no changes made.
-
-**Prerequisites**: Antigravity installed at `/opt/Antigravity`; `sudo` access for the `toggle` step; `rsync` recommended (falls back to `cp`).
-
-**Warnings**:
-- `toggle` and `ide-only` modify files under `/opt/Antigravity/resources` with `sudo` — a bad state (`app.asar` and `app.asar.bak` both present, or neither) is detected but not auto-repaired.
-- `ide-only` moves the 2.0 config dir away (not a copy); it prints the `mv` command needed to undo it.
-- Unknown commands print usage and exit 1.
+1. [backup-antigravity.sh](#backup-antigravitysh)
+2. [backup-claude.sh](#backup-claudesh)
+3. [backup-zed.sh](#backup-zedsh)
+4. [fix-monitor-wake.sh](#fix-monitor-wakesh)
+5. [setup_smb_discovery.sh](#setup_smb_discoverysh)
+6. [install-gaming-battlenet.sh](#install-gaming-battlenetsh)
+7. [launch-battlenet.sh](#launch-battlenetsh)
+8. [remove-gaming-battlenet.sh](#remove-gaming-battlenetsh)
+9. [install-gaming-hdt.sh](#install-gaming-hdtsh)
+10. [launch-hdt.sh](#launch-hdtsh)
+11. [remove-gaming-hdt.sh](#remove-gaming-hdtsh)
+12. [install-gaming-lutris.sh](#install-gaming-lutrissh)
+13. [remove-gaming-lutris.sh](#remove-gaming-lutrissh)
+14. [install-hongguo.sh](#install-hongguosh)
+15. [launch-hongguo.sh](#launch-hongguosh)
+16. [remove-hongguo.sh](#remove-hongguosh)
+17. [install-gpu-lib32.sh](#install-gpu-lib32sh)
+18. [setup-local-bin-path.sh](#setup-local-bin-pathsh)
+19. [install-android-waydroid.sh](#install-android-waydroidsh)
+20. [launch-waydroid.sh](#launch-waydroidsh)
+21. [remove-android-waydroid.sh](#remove-android-waydroidsh)
+22. [fix-waydroid-firewall.sh](#fix-waydroid-firewallsh)
+23. [install-rust.sh](#install-rustsh)
+24. [install-bevy.sh](#install-bevysh)
+25. [install-golang.sh](#install-golangsh)
+26. [install-docker.sh](#install-dockersh)
 
 ---
 
 ## backup-antigravity.sh
 
-**Purpose**: Backs up and restores **Antigravity CLI** (`agy`) configuration — settings, status line, plugins, skills, MCP config, hooks — via zip archive or a secret GitHub Gist. This is distinct from `antigravity-restore.sh`: that script fixes the Antigravity IDE app launcher/profile, this one backs up the separate Antigravity CLI tool's config directory. See also [`agy-artifact-custom-command-walkthrough.md`](agy-artifact-custom-command-walkthrough.md) for what the `plugins/` and `skills/` content actually contains.
+**Purpose**: Backs up and restores **Antigravity CLI** (`agy`) configuration — settings, keybindings, status line, plugins, skills, MCP config, and hooks — via zip archive or a secret GitHub Gist. See also [`agy-artifact-custom-command-walkthrough.md`](agy-artifact-custom-command-walkthrough.md) for what the `plugins/` and `skills/` content actually contains.
 
 **Usage**:
 ```bash
@@ -83,18 +49,18 @@ This script is the tool behind [`antigravity-recovery-guide.md`](antigravity-rec
 ./backup-antigravity.sh --help    | -h  # show help
 ```
 
-**What gets backed up**: `settings.json`, `statusline.sh`, `plugins/`, `mcp_config.json`, `hooks.json` (always checked), plus `skills/` (optional). Missing targets are silently skipped.
+**What gets backed up**: `settings.json`, `keybindings.json`, `statusline.sh`, `plugins/`, `mcp_config.json`, `hooks.json` (always checked), plus `skills/` (optional). Missing targets are silently skipped.
 
 **Not backed up**: `brain/`, `cache/`, `log/`, `conversations/`, `builtin/`, `bin/`, `implicit/`, `knowledge/` — machine-specific, transient, or auto-restored on install.
 
 **What it does**:
 - `--zip` — collects existing targets, prints a summary (file/plugin counts), and zips them (relative paths) into `~/backups/antigravity/antigravity-backup-<timestamp>.zip`, excluding `.DS_Store`, dotfiles, `.log`, `__pycache__`, `node_modules`. Lists the 5 most recent backups if more than one exists.
 - `--gist` — same collection, but flattens directory structure with `__` separators (e.g. `plugins__artifact-manager__plugin.json`) into a temp dir, then uploads via `gh gist create`. Requires `gh auth login` beforehand.
-- `--restore <zip>` — previews the zip contents, asks `[y/N]` confirmation, takes a **pre-restore safety zip** (`antigravity-pre-restore-<timestamp>.zip`) of the current config, then `unzip -o`'s into `AGY_CONFIG_DIR` and re-applies `chmod +x` to any `.sh` files.
+- `--restore <zip>` — previews the zip contents, asks `[y/N]` confirmation, takes a **pre-restore safety zip** (`antigravity-pre-restore-<timestamp>.zip`) of the current config, then extracts into `AGY_CONFIG_DIR` and re-applies `chmod +x` to any `.sh` files. Restore stops if the safety backup fails.
 - `--diff <zip>` — extracts the backup to a temp dir and reports `MISSING` (in backup, not current), `CHANGED` (with a unified diff, first 20 lines), and `NEW` (in current, not backup) — no files are modified.
 - `--list` — lists all `antigravity-*.zip` files in the backup dir, newest first.
 
-**Prerequisites**: `zip` (for `--zip`/`--both`/`--restore`/`--diff`), `unzip` (for `--restore`/`--diff`), `gh` CLI authenticated via `gh auth login` (for `--gist`/`--both`). Exits 1 if the Antigravity CLI config dir doesn't exist, or if there's nothing to back up.
+**Prerequisites**: `bsdtar` from `libarchive` (for `--zip`/`--both`/`--restore`/`--diff`), `gh` CLI authenticated via `gh auth login` (for `--gist`/`--both`). Exits 1 if the Antigravity CLI config dir doesn't exist, or if there's nothing to back up.
 
 **Environment variables**:
 | Variable | Default | Purpose |

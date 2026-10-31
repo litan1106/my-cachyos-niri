@@ -34,7 +34,7 @@ dotfiles/
 │   └── noctalia-shell/
 │       └── Modules/Panels/Launcher/
 │           └── LauncherCore.qml  ← Custom Windows-style Start Menu power options layout
-├── bash/                ← .bashrc / .inputrc synced by apply.sh
+├── bash/                ← .bashrc / .bash_profile / .inputrc synced by apply.sh
 ├── terminal/            ← Default terminal (foot): foot/foot.ini + xdg-terminals.list + environment.d/terminal.conf
 ├── llm/                 ← Local LLM setup notes (llama.cpp, ROCm, …)
 ├── package-inventory/   ← inventory.md + pkg-export.sh package audit tooling
@@ -67,7 +67,7 @@ chmod +x install.sh
 1. **Verifies system compatibility** (expects Arch Linux / CachyOS).
 2. **Detects or installs `yay`** as the AUR helper.
 3. **Synchronizes user packages** via `pacman` (Alacritty, udiskie automounting, Wayland clipboard history, etc.).
-4. **Synchronizes customized helper packages** via `yay` (Google Chrome, Typora, Antigravity, Antigravity IDE, Claude Desktop, and Codex Desktop).
+4. **Installs standalone agent CLIs first**, then desktop apps and other custom packages. Claude Code, Codex, OpenCode, and Antigravity CLI use their official shell installers. Existing package-managed versions of these CLIs are removed after all four installers succeed.
 5. **Safely deploys Niri configurations** from `dotfiles/niri/` to `~/.config/niri/` (creating a timestamped backup of any existing configuration first), while leaving monitor/output config local to each machine.
 6. **Deploys GTK window buttons** (`gtk-3.0` and `gtk-4.0` settings) so you instantly get **Minimize, Maximize, and Close** buttons on all your window titlebars.
 7. **Optionally updates `/etc/skel/`** (requires sudo) so any new users created on the system automatically inherit this setup.
@@ -116,14 +116,24 @@ Resolve any conflicts in `niri/cfg/keybinds.kdl` if a key you customised was als
 | `udiskie` | User-session removable drive automounting |
 | `wl-clipboard` | Wayland clipboard command-line tools |
 
-### AUR Packages (`yay`)
+### Standalone agent CLIs
+| Tool | Install source |
+|---|---|
+| Claude Code | [Official installer](https://code.claude.com/docs/en/setup) to `~/.local/bin` |
+| Codex | [Standalone installer](https://chatgpt.com/codex/install.sh) to `~/.local/bin` |
+| OpenCode | [V2 standalone installer](https://opencode.ai/v2/install) to `~/.opencode/bin` |
+| Antigravity CLI | [Official installer](https://antigravity.google/download) to `~/.local/bin` |
+
+### Desktop and other custom packages (`pacman`, then `yay`)
 | Package | Purpose |
 |---|---|
+| `claude-desktop` | Claude AI desktop client (repo binary) |
+| `chatgpt-desktop-bin` | ChatGPT desktop client (repo binary) |
 | `google-chrome` | Web browser (replaces Firefox) |
-| `antigravity-ide` | Default code editor |
+| `megasync-bin` | MEGA cloud sync client |
 | `antigravity` | Antigravity application |
-| `claude-desktop-bin` | Claude AI desktop client |
-| `openai-codex-desktop` | Codex AI desktop client |
+| `espanso-wayland-bin` | Wayland text expander |
+| `visual-studio-code-bin` | VS Code |
 | `typora` | WYSIWYG markdown editor |
 
 ---
@@ -164,7 +174,7 @@ Resolve any conflicts in `niri/cfg/keybinds.kdl` if a key you customised was als
 | `Super + Alt + Return` | Terminal + Tmux |
 | `Super + Shift + Return` / `Super + B` | Google Chrome |
 | `Super + Shift + Alt + B` | Chrome (Incognito) |
-| `Super + Shift + N` | Antigravity IDE |
+| `Super + Shift + N` | Neovim |
 | `Super + Shift + A` | Claude Desktop |
 | `Super + Shift + Alt + A` | Codex Desktop |
 | `Super + Shift + G` | Antigravity App |

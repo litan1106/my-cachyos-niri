@@ -41,7 +41,7 @@ for arg in "$@"; do
             echo "  gtk         Sync ~/.config/gtk-3.0 and gtk-4.0 settings"
             echo "  qs          Sync ~/.config/quickshell/noctalia-shell"
             echo "  noctalia    Sync ~/.config/noctalia/settings.json"
-            echo "  bash        Sync ~/.bashrc and ~/.inputrc"
+            echo "  bash        Sync ~/.bashrc, ~/.bash_profile, and ~/.inputrc"
             echo "  terminal    Sync foot.ini, xdg-terminals.list and environment.d/terminal.conf"
             echo "  --dry       Preview changes without applying"
             exit 0
@@ -141,6 +141,7 @@ if [[ " ${TARGETS[*]} " == *" bash "* ]]; then
     if [ -d "${REPO_DIR}/bash" ]; then
         echo -e "${BLUE}[*] Syncing bash config...${NC}"
         [ -f "${REPO_DIR}/bash/.bashrc" ] && sync_file "${REPO_DIR}/bash/.bashrc" "$HOME/.bashrc"
+        [ -f "${REPO_DIR}/bash/.bash_profile" ] && sync_file "${REPO_DIR}/bash/.bash_profile" "$HOME/.bash_profile"
         [ -f "${REPO_DIR}/bash/.inputrc" ] && sync_file "${REPO_DIR}/bash/.inputrc" "$HOME/.inputrc"
         echo ""
     fi

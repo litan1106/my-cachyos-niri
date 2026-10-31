@@ -66,19 +66,22 @@ OFFICIAL_PACKAGES=(
     "noctalia-shell"
     "noctalia-qs"
     "alacritty"
+    "curl"
     "foot"
     "tmux"
     "nautilus"
     "obsidian"
 )
 
-CUSTOM_AUR_PACKAGES=(
+DESKTOP_REPO_PACKAGES=(
+    "claude-desktop"
+    "chatgpt-desktop-bin"
+)
+DESKTOP_AUR_PACKAGES=(
     "typora"
     "google-chrome"
+    "megasync-bin"
     "antigravity"
-    "antigravity-ide"
-    "claude-desktop-bin"
-    "openai-codex-desktop"
 )
 
 # 4. Install Core System & Apps from Official & CachyOS Repositories
@@ -86,10 +89,24 @@ echo -e "\n${BLUE}[*] Installing Core System & Apps from Official / CachyOS Repo
 sudo pacman -S --needed --noconfirm "${OFFICIAL_PACKAGES[@]}"
 echo -e "${GREEN}[✔] Official packages synchronized.${NC}"
 
-# 5. Install Custom Packages from AUR using yay/paru
-echo -e "\n${BLUE}[*] Syncing Custom AUR Packages using ${AUR_HELPER}...${NC}"
-$AUR_HELPER -S --needed --noconfirm "${CUSTOM_AUR_PACKAGES[@]}"
-echo -e "${GREEN}[✔] Custom AUR packages synchronized.${NC}"
+# 5. Install standalone CLIs before desktop apps
+echo -e "\n${BLUE}[*] Syncing standalone agent CLIs...${NC}"
+export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$PATH"
+curl -fsSL https://claude.ai/install.sh | bash
+curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh
+curl -fsSL https://opencode.ai/v2/install | bash -s -- --no-modify-path
+curl -fsSL https://antigravity.google/cli/install.sh | bash
+for old_package in claude-code openai-codex openai-codex-bin opencode opencode-bin antigravity-cli agy; do
+    if pacman -Qq "$old_package" &>/dev/null; then
+        sudo pacman -R --noconfirm "$old_package"
+    fi
+done
+echo -e "${GREEN}[✔] Standalone agent CLIs synchronized.${NC}"
+
+echo -e "\n${BLUE}[*] Syncing desktop apps...${NC}"
+sudo pacman -S --needed --noconfirm "${DESKTOP_REPO_PACKAGES[@]}"
+$AUR_HELPER -S --needed --noconfirm "${DESKTOP_AUR_PACKAGES[@]}"
+echo -e "${GREEN}[✔] Desktop apps synchronized.${NC}"
 
 # 6. Deploy Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

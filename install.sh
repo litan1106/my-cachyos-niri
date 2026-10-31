@@ -135,6 +135,7 @@ OFFICIAL_PACKAGES=(
     xdg-terminal-exec
     btop
     cliphist
+    curl
     fastfetch
     github-desktop
     handbrake
@@ -149,21 +150,37 @@ OFFICIAL_PACKAGES=(
 sudo pacman -S --needed --noconfirm "${OFFICIAL_PACKAGES[@]}"
 ok "Official packages synchronized."
 
-# ── 4. Custom AUR Packages ────────────────────────────────────
-header "AUR Packages"
-CUSTOM_AUR_PACKAGES=(
+# ── 4. Standalone agent CLIs ───────────────────────────────────
+header "Standalone Agent CLIs"
+export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$PATH"
+curl -fsSL https://claude.ai/install.sh | bash
+curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh
+curl -fsSL https://opencode.ai/v2/install | bash -s -- --no-modify-path
+curl -fsSL https://antigravity.google/cli/install.sh | bash
+for old_package in claude-code openai-codex openai-codex-bin opencode opencode-bin antigravity-cli agy; do
+    if pacman -Qq "$old_package" &>/dev/null; then
+        sudo pacman -R --noconfirm "$old_package"
+    fi
+done
+ok "Standalone agent CLIs synchronized."
+
+# ── 4b. Desktop apps and other custom packages ────────────────
+header "Desktop Apps"
+DESKTOP_REPO_PACKAGES=(
+    claude-desktop
+    chatgpt-desktop-bin
+)
+DESKTOP_AUR_PACKAGES=(
     typora
     google-chrome
+    megasync-bin
     antigravity
-    antigravity-cli
-    antigravity-ide
-    claude-desktop-bin
-    espanso-wayland-git
-    openai-codex-desktop
+    espanso-wayland-bin
     visual-studio-code-bin
 )
-$AUR_HELPER -S --needed --noconfirm "${CUSTOM_AUR_PACKAGES[@]}"
-ok "AUR packages synchronized."
+sudo pacman -S --needed --noconfirm "${DESKTOP_REPO_PACKAGES[@]}"
+$AUR_HELPER -S --needed --noconfirm "${DESKTOP_AUR_PACKAGES[@]}"
+ok "Desktop apps and AUR packages synchronized."
 
 # ── 5. Set Default Shell to Bash ────────────────────────────
 header "Setting Default Shell → bash"
@@ -178,6 +195,7 @@ fi
 header "Deploying Bash Configs"
 if [ -d "${DOTFILES_DIR}/bash" ]; then
     [ -f "${DOTFILES_DIR}/bash/.bashrc" ] && deploy_file "${DOTFILES_DIR}/bash/.bashrc" "$HOME/.bashrc"
+    [ -f "${DOTFILES_DIR}/bash/.bash_profile" ] && deploy_file "${DOTFILES_DIR}/bash/.bash_profile" "$HOME/.bash_profile"
     [ -f "${DOTFILES_DIR}/bash/.inputrc" ] && deploy_file "${DOTFILES_DIR}/bash/.inputrc" "$HOME/.inputrc"
     ok "Bash configuration deployed."
 fi
@@ -247,6 +265,7 @@ EOF
     sudo mkdir -p /etc/skel/.config/quickshell
     sudo cp -r "$HOME/.config/quickshell/noctalia-shell" /etc/skel/.config/quickshell/
     [ -f "$HOME/.bashrc" ] && sudo cp "$HOME/.bashrc" /etc/skel/
+    [ -f "$HOME/.bash_profile" ] && sudo cp "$HOME/.bash_profile" /etc/skel/
     [ -f "$HOME/.inputrc" ] && sudo cp "$HOME/.inputrc" /etc/skel/
     ok "Copied to /etc/skel."
 fi
