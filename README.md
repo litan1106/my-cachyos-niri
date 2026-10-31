@@ -103,7 +103,7 @@ Configure each machine's displays in `~/.config/hypr/config/monitors.lua` and mo
 
 Open Noctalia settings with Super+Z to choose apps, wallpaper, and other local preferences. Noctalia v5 reads TOML from `~/.config/noctalia/`; GUI-managed `~/.local/state/noctalia/settings.toml` can override shared TOML. Run `noctalia config export` to inspect effective choices and `noctalia config validate` after edits. Review any export for private values before sharing it.
 
-The default installer keeps the CachyOS appearance. To install the optional top status bar with a CachyOS app launcher icon, workspaces, and active window in the center and the clock/date on the right, bottom dock with an Apps button, grid launcher, and theme:
+The default installer keeps the CachyOS appearance. To install the optional top status bar with a CachyOS app launcher icon, workspaces, and active window in the center and the clock/date on the right, plus a bottom window dock with an Apps button and a separate icon for each open window:
 
 ```bash
 ./install.sh --with-layout --dry-run
@@ -111,6 +111,8 @@ The default installer keeps the CachyOS appearance. To install the optional top 
 ```
 
 The flag installs `~/.config/noctalia/zz-shared.toml`. Later runs without the flag leave it in place; move that file aside to return to the CachyOS layout. See [noctalia-v5/README.md](noctalia-v5/README.md) for details.
+
+The profile sets Hyprland window opacity to 1. The provided Foot config also uses an opaque background; installed terminals with their own transparency setting must use an opacity of 1.
 
 For Mac-style title bars and left-side window buttons, install Hyprland's optional Hyprbars plugin as the desktop user:
 
@@ -124,7 +126,7 @@ hyprctl reload
 hyprctl configerrors
 ```
 
-The custom title bar is configured in `hypr/config/my_desktop.lua` and activates only when Hyprbars is loaded. The profile reloads enabled `hyprpm` plugins at the next Hyprland start. Red closes the window, green toggles maximize, and yellow hides it in Hyprland's `special:minimized` workspace. Super+Shift+M restores a hidden window; use this one window at a time. This is a workspace-based approximation of minimize; Noctalia's Hyprland dock does not restore it like a macOS dock. GNOME apps keep their built-in header bars to avoid two stacked bars. For GTK apps, set the controls on the left with `gsettings set org.gnome.desktop.wm.preferences button-layout 'close,minimize,maximize:'`. The installer leaves existing GTK files untouched; merge the button rules from this repository's `gtk-3.0/` and `gtk-4.0/` files into local GTK CSS if desired. Other apps that draw their own title bar may need a Hyprbars `no_bar` rule or an app-specific setting. Run `hyprpm update` after a Hyprland upgrade so Hyprbars matches the new version.
+The custom title bar is configured in `hypr/config/my_desktop.lua` and activates only when Hyprbars is loaded. The profile reloads enabled `hyprpm` plugins at the next Hyprland start. Red closes the window, green toggles maximize, and yellow hides it in Hyprland's `special:minimized` workspace. Super+Shift+M restores a hidden window; use this one window at a time. This is a workspace-based approximation of minimize; the bottom window dock on Hyprland does not restore it like a macOS dock. GNOME apps keep their built-in header bars to avoid two stacked bars. For GTK apps, set the controls on the left with `gsettings set org.gnome.desktop.wm.preferences button-layout 'close,minimize,maximize:'`. The installer leaves existing GTK files untouched; merge the button rules from this repository's `gtk-3.0/` and `gtk-4.0/` files into local GTK CSS if desired. Other apps that draw their own title bar may need a Hyprbars `no_bar` rule or an app-specific setting. Run `hyprpm update` after a Hyprland upgrade so Hyprbars matches the new version.
 
 ## Share and update
 
