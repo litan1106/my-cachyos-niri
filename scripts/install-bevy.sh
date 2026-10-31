@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Install the native libraries Bevy needs to build and run on CachyOS + niri.
+# Install the native libraries Bevy needs to build and run on CachyOS + Hyprland.
 # Requires sudo for the pacman step. Rust itself comes from install-rust.sh;
 # run that first.
 #

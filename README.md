@@ -1,315 +1,174 @@
-# CachyOS Dotfiles — Niri + Omarchy Desktop
+# CachyOS Hyprland + Noctalia v5
 
-> **Base**: [cachyos-niri-settings](https://github.com/CachyOS/cachyos-niri-settings)  
-> **Style**: [Omarchy keybindings](https://omarchy.com)  
-> **Shell**: [noctalia-shell](https://docs.noctalia.dev)
+This repository adds portable shortcuts to the maintained [CachyOS Hyprland + Noctalia setup](https://github.com/CachyOS/cachyos-hypr-noctalia). CachyOS supplies Hyprland and its Lua base configuration; this repository adds an Omarchy-inspired shortcut layer and an optional Noctalia layout.
 
-A personal desktop configuration for **CachyOS + Niri** — batteries-included with Omarchy-style keybindings, GTK window decorations, and a curated developer app stack. Clone once, run `./install.sh` on any Arch/CachyOS machine.
+## Fresh install or another account
 
----
-
-## 📁 Repository Structure
-
-```
-dotfiles/
-├── niri/               ← Niri WM config (keybinds, layout, rules …)
-│   ├── config.kdl      ← Entry point, includes all cfg/ files
-│   └── cfg/
-│       ├── animation.kdl
-│       ├── autostart.kdl
-│       ├── display.kdl
-│       ├── input.kdl
-│       ├── keybinds.kdl    ← Omarchy-style hotkeys
-│       ├── layout.kdl
-│       ├── misc.kdl
-│       └── rules.kdl
-├── gtk-3.0/
-│   └── settings.ini    ← Dark theme, cursor, min/max/close buttons
-├── gtk-4.0/
-│   └── settings.ini    ← Same settings for GTK4 apps
-├── noctalia/
-│   ├── settings.json   ← Classic Windows 10 style taskbar layout settings
-│   └── plugins.json    ← Enabled quickshell desktop plugins
-├── quickshell/
-│   └── noctalia-shell/
-│       └── Modules/Panels/Launcher/
-│           └── LauncherCore.qml  ← Custom Windows-style Start Menu power options layout
-├── bash/                ← .bashrc / .inputrc synced by apply.sh
-├── terminal/            ← Default terminal (foot): foot/foot.ini + xdg-terminals.list + environment.d/terminal.conf
-├── llm/                 ← Local LLM setup notes (llama.cpp, ROCm, …)
-├── package-inventory/   ← inventory.md + pkg-export.sh package audit tooling
-├── scripts/             ← Standalone utility scripts (backups, fixes, SMB setup)
-├── docs/                ← Standalone reference guides (recovery, migration, hotkeys)
-├── install.sh           ← One-shot interactive installer
-├── apply.sh             ← Fast config re-sync without a full reinstall
-└── README.md
-```
-
----
-
-## 🛠️ Installation & Syncing (Fresh Machine)
-
-To deploy these customizations to a fresh CachyOS installation running Niri:
+Select Hyprland during CachyOS installation, or install the profile first. Clone this repository and run the installer as the desktop user:
 
 ```bash
-# 1. Clone your personal dotfiles repository
-git clone https://github.com/litan1106/my-cachyos-niri.git ~/dotfiles
-
-# 2. Navigate into the dotfiles directory
-cd ~/dotfiles
-
-# 3. Make the installer executable and run it
-chmod +x install.sh
+sudo pacman -Syu --needed cachyos-hypr-noctalia
+git clone https://github.com/litan1106/my-cachyos-niri.git
+cd my-cachyos-niri
+./install.sh --dry-run
 ./install.sh
 ```
 
-### What the installer does automatically:
-1. **Verifies system compatibility** (expects Arch Linux / CachyOS).
-2. **Detects or installs `yay`** as the AUR helper.
-3. **Synchronizes user packages** via `pacman` (Alacritty, udiskie automounting, Wayland clipboard history, etc.).
-4. **Synchronizes customized helper packages** via `yay` (Google Chrome, Typora, Antigravity, Antigravity IDE, Claude Desktop, and Codex Desktop).
-5. **Safely deploys Niri configurations** from `dotfiles/niri/` to `~/.config/niri/` (creating a timestamped backup of any existing configuration first), while leaving monitor/output config local to each machine.
-6. **Deploys GTK window buttons** (`gtk-3.0` and `gtk-4.0` settings) so you instantly get **Minimize, Maximize, and Close** buttons on all your window titlebars.
-7. **Optionally updates `/etc/skel/`** (requires sudo) so any new users created on the system automatically inherit this setup.
-8. **Live-reloads Niri** if it is currently running, applying your settings instantly.
+The installer copies CachyOS's `/etc/skel/.config/hypr` base only when the account has no Hyprland configuration. It appends `require("config.my_desktop")` to the CachyOS loader and installs `hypr/config/my_*.lua`. The default Noctalia layout remains in use. Changed files receive timestamped `.bak` copies; identical files are left alone. The installer checks for the expected CachyOS Lua loader and stops if its structure has changed.
 
-> **Monitor note**: `niri/cfg/display.kdl` is intentionally not installed or overwritten by `install.sh`, because display names, refresh rates, scaling, and positions are machine-specific. After install, run `niri msg outputs` on each machine and edit `~/.config/niri/cfg/display.kdl` locally if you need explicit monitor rules.
-
-> **Input note**: `niri/cfg/input.kdl` is gitignored — it contains device-specific settings (keyboard layout, mouse/touchpad sensitivity) that differ per machine. After install, apply these recommended tweaks manually in `~/.config/niri/cfg/input.kdl`:
-> - **Disable `focus-follows-mouse`** — comment it out so windows don't resize/refocus as you hover; focus only changes on click. Without this, moving the mouse over any window instantly shifts focus and causes the active column to resize.
->   ```kdl
->   // focus-follows-mouse
->   ```
-
----
-
-## 🔄 Keeping in Sync with CachyOS Upstream
-
-Add the upstream CachyOS Niri repo as a remote to pull future changes cleanly:
+Log out and select **Hyprland (UWSM)** in the display manager. In that session, check the configuration and shell:
 
 ```bash
-cd ~/dotfiles
-git remote add upstream https://github.com/CachyOS/cachyos-niri-settings.git
+hyprctl configerrors
+noctalia config validate
+noctalia msg status
 ```
 
-To apply upstream updates without losing your custom changes:
+Test the launcher, dock, session menu, lock screen, hardware keys, notifications, and your usual applications.
+
+## Migrate from this repository's Niri setup
+
+Follow the [step-by-step migration guide](docs/migrate-niri-to-hyprland-noctalia-v5.md) for checks, autologin, verification, and recovery.
+
+Run the migration script as the desktop user from a clone of this repository. Preview and prepare the migration:
 
 ```bash
-git fetch upstream
-git rebase upstream/master   # replays your commits on top of upstream changes
+./scripts/migrate-niri-to-hypr.sh prepare --dry-run
+./scripts/migrate-niri-to-hypr.sh prepare
 ```
 
-Resolve any conflicts in `niri/cfg/keybinds.kdl` if a key you customised was also changed upstream. Everything else (GTK, AUR packages) is untouched by upstream.
+Preparation backs up the old configuration under `${XDG_STATE_HOME:-$HOME/.local/state}/cachyos-hypr-migration/`, installs the CachyOS Hyprland profile, and applies this repository's shortcuts. It removes the recognized Qt 6.11 package pin and moves aside the old qBittorrent 5.2.4 launcher override if they are present. The old qBittorrent binary is left in place. Follow the script's output if it finds a different configuration that needs review. Add `--with-layout` to `prepare` to install the optional Noctalia layout described below.
 
----
-
-## 📦 Package Groups
-
-### Official / CachyOS Repos (`pacman`)
-| Package | Purpose |
-|---|---|
-| `alacritty` | GPU-accelerated terminal |
-| `foot` | Default Wayland terminal (keybinds, launcher, xdg) |
-| `xdg-terminal-exec` | Opens `Terminal=true` apps in the default terminal (foot) |
-| `cliphist` | Wayland clipboard history backend |
-| `obsidian` | Local markdown knowledge base |
-| `udiskie` | User-session removable drive automounting |
-| `wl-clipboard` | Wayland clipboard command-line tools |
-
-### AUR Packages (`yay`)
-| Package | Purpose |
-|---|---|
-| `google-chrome` | Web browser (replaces Firefox) |
-| `antigravity-ide` | Default code editor |
-| `antigravity` | Antigravity application |
-| `claude-desktop-bin` | Claude AI desktop client |
-| `openai-codex-desktop` | Codex AI desktop client |
-| `typora` | WYSIWYG markdown editor |
-
----
-
-## ⌨️ Key Hotkeys (Omarchy-style)
-
-### System
-| Hotkey | Action |
-|---|---|
-| `Super + Space` | App launcher |
-| `Super + V` | Clipboard history |
-| `Super + Alt + Space` | System / session menu |
-| `Super + Escape` | System menu |
-| `Super + Ctrl + L` | Lock screen |
-| `Super + W` / `Super + Q` | Close window |
-| `Super + Shift + Escape` | Show hotkey overlay |
-
-### Window & Workspaces
-| Hotkey | Action |
-|---|---|
-| `Super + F` | Fullscreen |
-| `Super + Alt + F` | Full width (maximize column) |
-| `Super + Ctrl + F` | True maximize to screen edges |
-| `Super + Up` | Maximize focused column |
-| `Super + T` | Toggle tiling / floating |
-| `Super + G` | Toggle tabbed column (grouping) |
-| `Super + Alt + G` | Expel window from group |
-| `Super + Arrow / H J K L` | Move focus |
-| `Super + Shift + Arrow / H J K L` | Move window |
-| `Super + [1-9]` | Switch workspace |
-| `Super + Shift + [1-9]` | Move window to workspace |
-| `Super + Tab / Shift+Tab` | Next / previous workspace |
-
-### App Launchers
-| Hotkey | App |
-|---|---|
-| `Super + Return` | Terminal (foot) |
-| `Super + Alt + Return` | Terminal + Tmux |
-| `Super + Shift + Return` / `Super + B` | Google Chrome |
-| `Super + Shift + Alt + B` | Chrome (Incognito) |
-| `Super + Shift + N` | Antigravity IDE |
-| `Super + Shift + A` | Claude Desktop |
-| `Super + Shift + Alt + A` | Codex Desktop |
-| `Super + Shift + G` | Antigravity App |
-| `Super + E` / `Super + Shift + F` | Nautilus (File Manager) |
-| `Super + Shift + O` | Obsidian |
-| `Super + Shift + W` | Typora |
-| `Super + Shift + Y` | YouTube (Chrome) |
-
----
-
-## 🪟 GTK Window Buttons
-
-`gtk-3.0/` and `gtk-4.0/` include `gtk-decoration-layout=menu:minimize,maximize,close` which enables **Minimize, Maximize, and Close** buttons on the right side of the titlebar for all GTK and Electron apps.
-
-> **Google Chrome**: additionally go to *Settings → Appearance → Use system title bar and borders → ON* to show native chrome buttons.
-
----
-
-## 🛠️ How to Customize Things
-
-You can customize every part of this tiling desktop ecosystem. The system is split into three layers:
-
-### 1. Compositor & Keybindings (Niri)
-All window management, layout rules, animations, and hotkeys are configured via Niri KDL files.
-* **Configuration Path**: `~/.config/niri/cfg/`
-  * Edit `keybinds.kdl` to change shortcut triggers, launch new applications, or bind scripts.
-  * Edit `layout.kdl` to customize window gaps, borders, layout modes, and dimensions.
-  * Edit `autostart.kdl` to add/remove services launching on startup.
-* **Applying Changes**: Niri automatically live-reloads configurations as soon as you save any `.kdl` file. To force a reload manually:
-  ```bash
-  niri msg action load-config-file
-  ```
-
-### 2. Status Bar, Taskbar & Start Menu (Noctalia Shell)
-The bottom bar, widgets, and the Start Menu launcher are powered by Quickshell.
-* **Settings JSON Path**: `~/.config/noctalia/settings.json`
-  * Rearrange bar widget order in `bar.widgets` (`left`, `center`, `right`). Available widgets include `Launcher`, `Taskbar`, `Workspace`, `Clock`, `Tray`, `Volume`, `Battery`, `Brightness`, `NotificationHistory`, and `ControlCenter`.
-  * Adjust bar position, spacing, opacity, margins, and corner radii.
-* **Custom QML Layouts Path**: `~/.config/quickshell/noctalia-shell/`
-  * Customize advanced shell interfaces (like the Start Menu profile and power button footer) in QML files (e.g. `Modules/Panels/Launcher/LauncherCore.qml`).
-* **Applying Changes**: Restart the shell to reload settings and QML components:
-  ```bash
-  qs -c noctalia-shell kill && qs -c noctalia-shell --daemonize
-  ```
-
-### 3. Window Control Buttons (GTK)
-Controls window decorations (Minimize, Maximize, Close buttons) for GTK and Electron applications.
-* **Configuration Path**: `~/.config/gtk-3.0/settings.ini` and `~/.config/gtk-4.0/settings.ini`
-  * Change button layout using `gtk-decoration-layout=menu:minimize,maximize,close`.
-
----
-
-## 🔄 Syncing Customizations Across Machines
-
-When you are using Niri and make changes (e.g., updating custom keybindings in `~/.config/niri/cfg/keybinds.kdl` or changing display setups), you can easily sync them back to your repository and distribute them across all your CachyOS machines.
-
-### 1. Push live changes to your GitHub repository:
-Whenever you customize something on your current active machine, sync it back to your personal repository:
+If preparation reports an existing SDDM autologin, review the file it names before logging out. An old session assignment can bypass the session chooser; temporarily disable that autologin or set its session to `hyprland-uwsm.desktop`. Reboot or log out, select **Hyprland (UWSM)**, and test the session. Then preview and complete the migration from that session:
 
 ```bash
-cd ~/dotfiles
-
-# Copy the latest live settings into the repository folder
-cp ~/.config/niri/config.kdl          niri/
-cp -r ~/.config/niri/cfg/*            niri/cfg/
-cp ~/.config/gtk-3.0/settings.ini     gtk-3.0/
-cp ~/.config/gtk-4.0/settings.ini     gtk-4.0/
-cp ~/.config/noctalia/settings.json   noctalia/
-cp ~/.config/noctalia/plugins.json    noctalia/
-cp ~/.config/xdg-terminals.list       terminal/
-cp ~/.config/environment.d/terminal.conf terminal/environment.d/
-cp ~/.config/foot/foot.ini             terminal/foot/
-cp ~/.config/quickshell/noctalia-shell/Modules/Panels/Launcher/LauncherCore.qml \
-   quickshell/noctalia-shell/Modules/Panels/Launcher/LauncherCore.qml
-
-# Commit your changes
-git add .
-git commit -m "feat: update keybindings and display layouts"
-
-# Push to your remote repository
-git push origin main
+./scripts/migrate-niri-to-hypr.sh finish --dry-run
+./scripts/migrate-niri-to-hypr.sh finish
 ```
 
-### 2. Pull and apply updates on another machine:
-On your other CachyOS machines, run this simple sequence to fetch and apply the updated configurations live:
+The finish step checks the live session and refuses to remove Niri while SDDM still selects it for autologin. It then removes the old Niri and Noctalia v4 packages, retains the old files in the migration backup, and uses `pacman -R` without recursive orphan removal. To enable SDDM autologin for this user after the session checks, add `--enable-autologin` to the `finish` command. Preview that change with `finish --dry-run --enable-autologin`.
+
+### Restore from a migration backup
+
+There is no automatic rollback. The script prints its timestamped backup path. It contains `user-config/niri`, `user-config/noctalia`, `user-config/quickshell-noctalia-shell`, and `user-config/hypr` when those files existed, plus `system/pacman.conf`. Retired live directories are under `retired/`.
+
+For example, to restore the saved Niri config when `~/.config/niri` does not exist, replace the example path with the printed backup path:
 
 ```bash
-cd ~/dotfiles
-
-# Fetch the latest updates from GitHub
-git pull origin main
-
-# Deploy the updated configurations live (will automatically backup existing ones and reload Niri)
-./install.sh
+backup_dir="$HOME/.local/state/cachyos-hypr-migration/<run>"
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}"
+test ! -e "$config_dir/niri" && cp -a "$backup_dir/user-config/niri" "$config_dir/niri"
 ```
 
----
+Inspect the other saved files before copying them to their original locations. Compare `system/pacman.conf` with the current `/etc/pacman.conf` before restoring any package settings. Restoring the old desktop also requires reinstalling its packages and selecting its session in the display manager.
 
-## 🐛 Troubleshooting
+## Customize the setup
 
-### GitHub Desktop won't open (AMD GPU + Wayland / Niri)
+### Shortcuts
 
-**Symptoms**: Running `github-desktop` prints only Fontconfig warnings and a radv notice — no window ever appears.
-
-**Root cause**: GitHub Desktop (Electron/Chromium) tries to use hardware-accelerated EGL via ANGLE for its GPU subprocess. On AMD + Wayland this fails immediately:
-
-```
-eglCreateImage failed with 0x00003009
-OzoneImageBacking::ProduceSkiaGanesh failed to create GL representation
-GPU process exited unexpectedly: exit_code=8704
-```
-
-Chromium retries the GPU process a few times then gives up, and the app exits silently before creating any Wayland surface.
-
-There are two things that can cause the app to not open:
-
-1. **Stale `SingletonLock`** — A previous crashed session leaves lock files that block new launches. New invocations silently signal the dead process and exit immediately.
-2. **EGL/ANGLE crash loop** — Even after the lock is cleared, the GPU process crashes on every start until a workaround is applied.
-
-**Fix (one-time setup)**:
+Edit `hypr/config/my_desktop.lua` in this repository. It loads after CachyOS's `~/.config/hypr/config/binds.lua`, so it can replace default bindings. Reapply and check the active config:
 
 ```bash
-# 1. Kill any orphaned github-desktop processes
-pkill -9 -f github-desktop 2>/dev/null
-
-# 2. Remove stale singleton lock files
-rm -f "$HOME/.config/GitHub Desktop/SingletonLock" \
-      "$HOME/.config/GitHub Desktop/SingletonSocket" \
-      "$HOME/.config/GitHub Desktop/SingletonCookie"
-
-# 3. Clear corrupted GPU shader caches
-rm -rf "$HOME/.config/GitHub Desktop/GPUCache" \
-       "$HOME/.config/GitHub Desktop/DawnGraphiteCache" \
-       "$HOME/.config/GitHub Desktop/DawnWebGPUCache" \
-       "$HOME/.config/GitHub Desktop/Code Cache"
-
-# 4. Patch the system launch wrapper to use SwiftShader (software GL)
-#    This bypasses the broken hardware EGL path permanently
-pkexec tee /usr/bin/github-desktop > /dev/null << 'EOF'
-#!/bin/sh
-
-/opt/github-desktop/github-desktop --use-gl=swiftshader "$@"
-EOF
+./apply.sh --dry-run
+./apply.sh
+hyprctl configerrors
+hyprctl binds
 ```
 
-> **Why `--use-gl=swiftshader`?** SwiftShader is ANGLE's CPU-based OpenGL ES renderer bundled inside GitHub Desktop itself (`/opt/github-desktop/libvk_swiftshader.so`). It bypasses the system's EGL/DRM stack entirely, so it is unaffected by AMD driver or Wayland compositor version. Rendering performance is still perfectly adequate for a Git UI.
+Super is the Windows/Command key. The full custom list is in `my_desktop.lua`; other CachyOS defaults remain available.
 
-> **Note**: The patch to `/usr/bin/github-desktop` will be overwritten when the `github-desktop` package is updated via `pacman` / `yay`. Re-run step 4 after each package upgrade if the issue returns.
+| Shortcut | Action |
+| --- | --- |
+| Super+Escape | Session menu |
+| Super+Alt+Space | Control Center |
+| Super+W / Super+T | Close window / toggle floating |
+| Super+Tab / Super+Shift+Tab | Next / previous workspace |
+| Super+Ctrl+Tab | Previous workspace on this monitor |
+| Super+1–4 / Super+Shift+1–4 | Focus / move window to workspace |
+| Super+Alt+F | Maximize window |
+| Super+Ctrl+L | Lock screen |
+| Super+Shift+Return / Super+Shift+F | Browser / file manager |
+| Super+Ctrl+T or Super+Shift+T | System monitor |
+| Super+Ctrl+V / Super+Ctrl+E | Clipboard / emoji launcher |
+| Super+Ctrl+W | Wallpaper picker |
+| Super+Comma / Super+Shift+Comma | Notifications / clear active notifications |
+| Super+Ctrl+I / Super+Ctrl+N | Toggle caffeine / night light |
+| Super+Ctrl+Comma / Super+Shift+Space | Toggle Do Not Disturb / bar |
+| Super+Shift+M | Restore a window hidden by the yellow title-bar button (with Hyprbars) |
+| Super+Print / Alt+Print | Capture window / full screen |
+
+### Displays, input, and Noctalia
+
+Configure each machine's displays in `~/.config/hypr/config/monitors.lua` and monitor assignments in `variables.lua`; configure keyboard and pointer input in `inputs.lua`. These machine-specific files are not deployed by this repository. Use `hyprctl monitors` to inspect connected outputs.
+
+For the LG ultrawide profile, run the optional setup script on the machine with that display:
+
+```bash
+./scripts/setup-lg-ultrawide.sh --dry-run
+./scripts/setup-lg-ultrawide.sh
+```
+
+It matches the LG monitor by model, sets its Hyprland scale to 1.25, and puts the Noctalia UI scale in a local `zzzz-lg-ultrawide.toml` overlay. The shared installer does not run this script.
+
+Open Noctalia settings with Super+Z to choose apps, wallpaper, and other local preferences. Noctalia v5 reads TOML from `~/.config/noctalia/`; GUI-managed `~/.local/state/noctalia/settings.toml` can override shared TOML. Run `noctalia config export` to inspect effective choices and `noctalia config validate` after edits. Review any export for private values before sharing it.
+
+### Omarchy theme picker
+
+Install the optional theme picker and twelve Omarchy palettes independently of the layout:
+
+```bash
+./install.sh --with-themes --dry-run
+./install.sh --with-themes
+noctalia msg panel-toggle my-cachyos-niri/omarchy-themes:picker
+```
+
+The picker shows color previews for Catppuccin, Catppuccin Latte, Everforest, Flexoki Light, Gruvbox, Kanagawa, Matte Black, Nord, Ristretto, Rose Pine, Solarized, and Tokyo Night. Selecting a card applies its palette and light or dark mode through Noctalia; CachyOS's enabled Noctalia templates then update supported apps. Wallpapers stay as the user chose them. The picker can also be added as an **Omarchy themes** shortcut in Noctalia's Control Center. To select from a terminal, run `noctalia msg plugin my-cachyos-niri/omarchy-themes:apply all set "Catppuccin Latte"`.
+
+The palettes are ports of Omarchy's color files, including the separate Solarized theme. The previews show those colors in a sample UI; they are not Omarchy wallpaper screenshots. The setup script backs up changed files and leaves unrelated palettes and plugins alone. See [noctalia-v5/omarchy-themes/README.md](noctalia-v5/omarchy-themes/README.md) for sources and regeneration details.
+
+The default installer keeps the CachyOS appearance. To install the optional top status bar with a CachyOS app launcher icon, workspaces, and active window in the center and the clock/date on the right, plus a bottom window dock with an Apps button and a separate icon for each open window:
+
+```bash
+./install.sh --with-layout --dry-run
+./install.sh --with-layout
+```
+
+The flag installs `~/.config/noctalia/zz-shared.toml`. Later runs without the flag leave it in place; move that file aside to return to the CachyOS layout. See [noctalia-v5/README.md](noctalia-v5/README.md) for details.
+
+The profile sets Hyprland window opacity to 1. The provided Foot config also uses an opaque background; installed terminals with their own transparency setting must use an opacity of 1.
+
+For Mac-style title bars and left-side window buttons, install Hyprland's optional Hyprbars plugin as the desktop user:
+
+```bash
+sudo pacman -S --needed hyprpm
+hyprpm update
+hyprpm add https://github.com/hyprwm/hyprland-plugins
+hyprpm enable hyprbars
+./apply.sh --with-layout
+hyprctl reload
+hyprctl configerrors
+```
+
+The custom title bar is configured in `hypr/config/my_desktop.lua` and activates only when Hyprbars is loaded. The profile reloads enabled `hyprpm` plugins at the next Hyprland start. Red closes the window, green toggles maximize, and yellow hides it in Hyprland's `special:minimized` workspace. Super+Shift+M restores a hidden window; use this one window at a time. This is a workspace-based approximation of minimize; the bottom window dock on Hyprland does not restore it like a macOS dock. GNOME apps keep their built-in header bars to avoid two stacked bars. For GTK apps, set the controls on the left with `gsettings set org.gnome.desktop.wm.preferences button-layout 'close,minimize,maximize:'`. The installer leaves existing GTK files untouched; merge the button rules from this repository's `gtk-3.0/` and `gtk-4.0/` files into local GTK CSS if desired. Other apps that draw their own title bar may need a Hyprbars `no_bar` rule or an app-specific setting. Run `hyprpm update` after a Hyprland upgrade so Hyprbars matches the new version.
+
+## Share and update
+
+Give another user the repository link and the fresh install instructions above, or the migration steps if they have the previous setup. The shared profile contains no fixed username, monitor ID, avatar, or wallpaper directory. Each user chooses their own displays, input devices, apps, and Noctalia preferences. Applications used by optional shortcuts must be installed separately.
+
+After pulling or editing this repository, run `./apply.sh --dry-run` followed by `./apply.sh`. Both commands use the same deployer as the first install. The previous `--profile hypr-v5` form is also accepted.
+
+## Files
+
+- `hypr/config/my_*.lua`: behavior layered after the CachyOS defaults.
+- `noctalia-v5/zz-shared.toml`: optional Noctalia v5 layout and appearance.
+- `noctalia-v5/omarchy-themes/`: optional Omarchy palettes and Noctalia theme picker.
+- `install.sh`, `apply.sh`, and `scripts/install-hypr-v5.sh`: profile validation, backup, and deployment.
+- `scripts/migrate-niri-to-hypr.sh`: migration for the previous desktop setup.
+- [docs/scripts-guide.md](docs/scripts-guide.md): other setup and maintenance scripts.
+
+## References
+
+- [CachyOS Hyprland + Noctalia configuration](https://github.com/CachyOS/cachyos-hypr-noctalia)
+- [CachyOS Hyprland post-install guide](https://wiki.cachyos.org/configuration/desktop_environments/hyprland/)
+- [Noctalia v5 configuration and validation](https://docs.noctalia.dev/noctalia/configuration/)
+- [Noctalia v5 Hyprland integration](https://docs.noctalia.dev/noctalia/compositor-settings/hyprland/)

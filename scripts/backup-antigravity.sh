@@ -19,6 +19,7 @@
 #
 # WHAT GETS BACKED UP
 #   settings.json       Model selection, trusted workspaces, color scheme, etc.
+#   keybindings.json    CLI keyboard shortcuts
 #   statusline.sh       Custom status line rendering script
 #   plugins/            Plugin bundles (e.g., artifact-manager) with skills,
 #                       hooks, MCP configs, and agent definitions
@@ -61,8 +62,7 @@
 #   - Executable permissions (.sh files) are re-applied after restore
 #
 # REQUIREMENTS
-#   zip     Required for --zip, --both, --restore, --diff
-#   unzip   Required for --restore, --diff
+#   bsdtar  Required for --zip, --both, --restore, --diff
 #   gh      Required for --gist, --both (https://cli.github.com)
 #
 # ENVIRONMENT VARIABLES
@@ -87,6 +87,7 @@ ZIP_NAME="antigravity-backup-${TIMESTAMP}.zip"
 # BACKUP_TARGETS_OPTIONAL: Same behavior, separated for clarity.
 BACKUP_TARGETS=(
   "settings.json"     # Core settings: model, color scheme, trusted workspaces
+  "keybindings.json"  # CLI keyboard shortcuts
   "statusline.sh"     # Custom status line script (renders ANSI in TUI footer)
   "plugins"           # Plugin bundles — each has plugin.json + skills/ + hooks/
   "mcp_config.json"   # Global MCP server definitions (stdio/SSE/websocket)
@@ -193,8 +194,8 @@ print_backup_summary() {
 do_zip() {
   check_config
 
-  if ! command -v zip &>/dev/null; then
-    error "'zip' is not installed. Install it with: sudo apt install zip"
+  if ! command -v bsdtar &>/dev/null; then
+    error "'bsdtar' is not installed. Install it with: sudo pacman -S libarchive"
     exit 1
   fi
 
@@ -214,12 +215,13 @@ do_zip() {
   # Zip from within the config dir so paths are relative
   (
     cd "${AGY_CONFIG_DIR}"
-    zip -r "${zip_path}" "${files[@]}" \
-      -x '*.DS_Store' \
-      -x '*/.*' \
-      -x '*.log' \
-      -x '*/__pycache__/*' \
-      -x '*/node_modules/*'
+    bsdtar -a -cf "${zip_path}" \
+      --exclude '*.DS_Store' \
+      --exclude '*/.*' \
+      --exclude '*.log' \
+      --exclude '*/__pycache__/*' \
+      --exclude '*/node_modules/*' \
+      "${files[@]}"
   )
 
   echo ""
@@ -252,7 +254,7 @@ do_zip() {
 # Requires:
 #   - gh CLI installed and authenticated (gh auth login)
 
-do_gist() {
+do_gist() (
   check_config
 
   if ! command -v gh &>/dev/null; then
@@ -318,10 +320,10 @@ do_gist() {
   success "Gist created: ${gist_url}"
   echo ""
   echo -e "  ${BOLD}To restore from this gist later:${NC}"
-  echo "  gh gist clone ${gist_url} /tmp/antigravity-restore"
+  echo "  gh gist clone ${gist_url} /tmp/antigravity-cli-gist"
   echo "  # Then copy files back to ~/.gemini/antigravity-cli/"
   echo ""
-}
+)
 
 # ─── Restore ──────────────────────────────────────────────────────────────────
 # Restores config from a zip backup file.
@@ -340,8 +342,18 @@ do_gist() {
 do_restore() {
   local zip_file="$1"
 
+  if ! command -v bsdtar &>/dev/null; then
+    error "'bsdtar' is not installed. Install it with: sudo pacman -S libarchive"
+    exit 1
+  fi
+
   if [[ ! -f "${zip_file}" ]]; then
     error "Zip file not found: ${zip_file}"
+    exit 1
+  fi
+
+  if ! bsdtar -tf "${zip_file}" >/dev/null; then
+    error "Cannot read ZIP backup: ${zip_file}"
     exit 1
   fi
 
@@ -354,7 +366,7 @@ do_restore() {
 
   # Preview: show what's inside the zip
   info "Contents of backup:"
-  unzip -l "${zip_file}" | tail -n +4 | head -n -2 | while read -r line; do
+  bsdtar -tf "${zip_file}" | while read -r line; do
     echo "    ${line}"
   done
   echo ""
@@ -369,22 +381,19 @@ do_restore() {
 
   # Safety: back up current config before overwriting, so you can roll back
   if [[ -d "${AGY_CONFIG_DIR}" ]]; then
-    local pre_restore_backup="${BACKUP_DIR}/antigravity-pre-restore-${TIMESTAMP}.zip"
-    mkdir -p "${BACKUP_DIR}"
-    info "Backing up current config first → ${pre_restore_backup}"
-    (
-      cd "${AGY_CONFIG_DIR}"
-      local current_files
-      read -ra current_files <<< "$(collect_files)"
-      if [[ ${#current_files[@]} -gt 0 ]]; then
-        zip -r "${pre_restore_backup}" "${current_files[@]}" -x '*.DS_Store' 2>/dev/null || true
-      fi
-    )
+    local current_files
+    read -ra current_files <<< "$(collect_files)"
+    if [[ ${#current_files[@]} -gt 0 ]]; then
+      local pre_restore_backup="${BACKUP_DIR}/antigravity-pre-restore-${TIMESTAMP}.zip"
+      mkdir -p "${BACKUP_DIR}"
+      info "Backing up current config first → ${pre_restore_backup}"
+      (cd "${AGY_CONFIG_DIR}" && bsdtar -a -cf "${pre_restore_backup}" --exclude '*.DS_Store' "${current_files[@]}")
+    fi
   fi
 
   # Extract into the config directory
   mkdir -p "${AGY_CONFIG_DIR}"
-  unzip -o "${zip_file}" -d "${AGY_CONFIG_DIR}"
+  bsdtar -xf "${zip_file}" -C "${AGY_CONFIG_DIR}"
 
   # Re-apply executable permissions on scripts (zip doesn't always preserve them)
   find "${AGY_CONFIG_DIR}" -name "*.sh" -exec chmod +x {} \;
@@ -408,7 +417,7 @@ do_restore() {
 # Usage:
 #   ./backup-antigravity.sh --diff ~/backups/antigravity/antigravity-backup-20260626.zip
 
-do_diff() {
+do_diff() (
   local zip_file="$1"
 
   if [[ ! -f "${zip_file}" ]]; then
@@ -421,7 +430,7 @@ do_diff() {
   temp_dir=$(mktemp -d)
   trap 'rm -rf "${temp_dir}"' EXIT
 
-  unzip -qo "${zip_file}" -d "${temp_dir}"
+  bsdtar -xf "${zip_file}" -C "${temp_dir}"
 
   echo ""
   echo -e "${BOLD}🔍 Diff: backup vs current config${NC}"
@@ -437,7 +446,9 @@ do_diff() {
       echo -e "  ${RED}MISSING${NC}  ${relative}  (exists in backup, not in current)"
     elif ! diff -q "${backup_file}" "${current}" &>/dev/null; then
       echo -e "  ${YELLOW}CHANGED${NC} ${relative}"
-      diff --color=always -u "${backup_file}" "${current}" | head -20 | sed 's/^/    /'
+      local diff_output
+      diff_output=$(diff --color=always -u "${backup_file}" "${current}" || true)
+      printf '%s\n' "${diff_output}" | sed -n '1,20s/^/    /p'
       echo ""
     fi
   done
@@ -461,7 +472,7 @@ do_diff() {
 
   echo "─────────────────────────────────────────"
   echo ""
-}
+)
 
 # ─── List Backups ─────────────────────────────────────────────────────────────
 # Show all existing backups in ~/backups/antigravity/, sorted newest first.
@@ -518,7 +529,7 @@ usage() {
   echo "  ./backup-antigravity.sh --help  -h   Show this help"
   echo ""
   echo "Backed up:"
-  echo "  settings.json, statusline.sh, plugins/, skills/, mcp_config.json, hooks.json"
+  echo "  settings.json, keybindings.json, statusline.sh, plugins/, skills/, mcp_config.json, hooks.json"
   echo ""
   echo "Not backed up (machine-specific):"
   echo "  brain/, cache/, log/, conversations/, builtin/"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # fix-monitor-wake.sh
-# Fixes: black screen on monitor wake for RX 9060 XT (RDNA 4) + HDMI on niri/Wayland
+# Workaround for a black screen on monitor wake observed with RX 9060 XT + HDMI.
 # Root cause: amdgpu REG_WAIT timeout on optc401_disable_crtc during DPMS off/on
 
 set -e

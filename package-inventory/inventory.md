@@ -1,13 +1,12 @@
 # Explicitly Installed Package Inventory
 
-This document categorizes all explicitly installed packages on this CachyOS/Arch Linux system (181 repo packages and 8 AUR/foreign packages) as of June 2026, detailing which ones are synced via the installer and which are excluded.
+This document categorizes explicitly installed packages on this CachyOS/Arch Linux system as of June 2026, detailing which ones are synced via the installer and which are excluded.
 
 ## 1. Desktop Essentials
 Core window manager settings, desktop shell components, fonts, networking, audio, and basic GUI helpers.
 
 | Package | Source | Sync Status | Note / Purpose |
 |---|---|---|---|
-| `cachyos-niri-noctalia` | Repo | Excluded | Synced separately via CachyOS settings packages. |
 | `alacritty` | Repo | **Synced** (`OFFICIAL_PACKAGES`) | Standard GPU-accelerated terminal emulator. |
 | `cliphist` | Repo | **Synced** (`OFFICIAL_PACKAGES`) | Wayland clipboard history manager. |
 | `wl-clipboard` | Repo | **Synced** (`OFFICIAL_PACKAGES`) | Wayland clipboard utilities (needed by Noctalia clipboard provider). |
@@ -54,11 +53,13 @@ Compilers, interpreters, CLI utilities, text editors, and IDEs.
 | `nano` | Repo | Excluded | Basic text editor. |
 | `vim` | Repo | Excluded | Advanced terminal text editor. |
 | `yay` / `paru` | Repo | **Handled** | AUR helper scripts. |
-| `antigravity` | AUR | **Synced** (`CUSTOM_AUR_PACKAGES`) | Antigravity AI companion. |
-| `antigravity-cli` | AUR | **Synced** (`CUSTOM_AUR_PACKAGES`) | Antigravity CLI interface. |
-| `antigravity-ide` | AUR | **Synced** (`CUSTOM_AUR_PACKAGES`) | Antigravity IDE application. |
-| `visual-studio-code-bin` | AUR | **Synced** (`CUSTOM_AUR_PACKAGES`) | VS Code IDE package. |
-| `espanso-wayland-git` | AUR | **Synced** (`CUSTOM_AUR_PACKAGES`) | Wayland text expander. |
+| Claude Code | Upstream | **Synced** (official installer) | Installed to `~/.local/bin`; package-managed variant removed. |
+| Codex CLI | Upstream | **Synced** (standalone installer) | Installed to `~/.local/bin`; package-managed variants removed. |
+| OpenCode V2 | Upstream | **Synced** (standalone installer) | Installed to `~/.opencode/bin`; package-managed variants removed. |
+| `antigravity` | AUR | **Synced** (`DESKTOP_AUR_PACKAGES`) | Antigravity AI companion. |
+| Antigravity CLI | Upstream | **Synced** (official installer) | Installed to `~/.local/bin`; package-managed variant removed. |
+| `visual-studio-code-bin` | AUR | **Synced** (`DESKTOP_AUR_PACKAGES`) | VS Code IDE package. |
+| `espanso-wayland-bin` | AUR | **Synced** (`DESKTOP_AUR_PACKAGES`) | Prebuilt Wayland text expander. |
 
 ---
 
@@ -67,10 +68,11 @@ Specialized media tools, document editors, downloaders, and personal software.
 
 | Package | Source | Sync Status | Note / Purpose |
 |---|---|---|---|
-| `google-chrome` | AUR | **Synced** (`CUSTOM_AUR_PACKAGES`) | Google Chrome browser. |
-| `claude-desktop-bin` | AUR | **Synced** (`CUSTOM_AUR_PACKAGES`) | Claude AI Desktop Client. |
-| `openai-codex-desktop` | AUR | **Synced** (`CUSTOM_AUR_PACKAGES`) | OpenAI Codex Desktop. |
-| `typora` | AUR | **Synced** (`CUSTOM_AUR_PACKAGES`) | Markdown editor. |
+| `google-chrome` | AUR | **Synced** (`DESKTOP_AUR_PACKAGES`) | Google Chrome browser. |
+| `megasync-bin` | AUR | **Synced** (`DESKTOP_AUR_PACKAGES`) | MEGA cloud sync client. |
+| `claude-desktop` | Repo | **Synced** (`DESKTOP_REPO_PACKAGES`) | Claude AI Desktop Client. |
+| `chatgpt-desktop-bin` | Repo | **Synced** (`DESKTOP_REPO_PACKAGES`) | ChatGPT Desktop Client. |
+| `typora` | AUR | **Synced** (`DESKTOP_AUR_PACKAGES`) | Markdown editor. |
 | `handbrake` | Repo | **Synced** (`OFFICIAL_PACKAGES`) | Video transcoder. |
 | `jdownloader2` | Repo | **Synced** (`OFFICIAL_PACKAGES`) | Download manager. |
 | `qbittorrent` | Repo | **Synced** (`OFFICIAL_PACKAGES`) | Torrent downloader client. |

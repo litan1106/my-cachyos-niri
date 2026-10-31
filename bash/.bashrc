@@ -2,6 +2,9 @@
 # ~/.bashrc
 #
 
+# Prefer standalone agent installers over desktop-bundled commands.
+export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$PATH"
+
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 

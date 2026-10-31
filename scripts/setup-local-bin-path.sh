@@ -1,15 +1,13 @@
 #!/bin/bash
 
-# Put ~/.local/bin on PATH the best-practice way for a systemd-managed niri
-# session (the model CachyOS uses: SDDM -> niri-session -> systemd --user).
+# Put ~/.local/bin on PATH through the systemd user environment.
 #
 # CachyOS/Arch do NOT add ~/.local/bin to PATH by default (only /etc/profile
 # adds /usr/local/bin), so user-installed launchers like `launch-battlenet`
 # don't resolve by name until you do this.
 #
 # Primary mechanism: ~/.config/environment.d/, read by the systemd user manager
-# at login. It reaches niri itself, every app launched from the menu, and
-# interactive terminals opened inside niri (they inherit the session env).
+# at login. Processes that inherit that environment receive the updated PATH.
 #
 # The only case it does NOT cover is a bare TTY login or SSH session; pass
 # --with-bashrc to also add the fallback export to ~/.bashrc for those.
@@ -65,8 +63,8 @@ EOF
 
   cat <<EOF
 
-~/.local/bin is now on PATH for niri on next re-login (the systemd user manager
-reads environment.d at session start). To use it in the CURRENT terminal:
+~/.local/bin will be on PATH for processes inheriting the systemd user environment
+after re-login. To use it in the CURRENT terminal:
 
   export PATH="\$HOME/.local/bin:\$PATH"
 
@@ -83,8 +81,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         cat <<'EOF'
 Usage: setup-local-bin-path.sh [--with-bashrc]
 
-Adds ~/.local/bin to PATH for a systemd-managed niri session via
-~/.config/environment.d/ (the niri/systemd best practice).
+Adds ~/.local/bin to PATH through the systemd user environment via
+~/.config/environment.d/.
 
 Options:
   --with-bashrc   Also append a PATH export to ~/.bashrc as a fallback for

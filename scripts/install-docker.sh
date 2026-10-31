@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Install Docker Engine + the Compose and Buildx CLI plugins on CachyOS + niri,
+# Install Docker Engine + the Compose and Buildx CLI plugins on CachyOS + Hyprland,
 # and let the current user run `docker` without sudo. Requires sudo.
 #
 # Notes for this machine (verified):

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Install Rust + Cargo (via rustup) on CachyOS + niri. Requires sudo for the
+# Install Rust + Cargo (via rustup) on CachyOS + Hyprland. Requires sudo for the
 # pacman step.
 #
 # Notes for this machine (verified):
@@ -26,7 +26,7 @@ rustup default stable
 rustup update stable
 
 # Tools installed with `cargo install` land in ~/.cargo/bin. Put it on PATH for
-# the niri session the same way setup-local-bin-path.sh handles ~/.local/bin.
+# the systemd user environment the same way setup-local-bin-path.sh handles ~/.local/bin.
 conf_dir="$HOME/.config/environment.d"
 conf="$conf_dir/20-cargo-bin.conf"
 mkdir -p "$conf_dir"

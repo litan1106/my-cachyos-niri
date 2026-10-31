@@ -1,0 +1,110 @@
+[bar.default]
+position = "top"
+margin_edge = 0
+margin_ends = 0
+background_opacity = 0.93
+thickness = 35
+widget_spacing = 6
+start = []
+center = ["launcher", "menu_gap", "workspaces", "window_gap", "active_window"]
+end = ["media", "tray", "notifications", "battery", "volume", "brightness", "clock_left_gap", "clock", "clock_right_gap", "control-center"]
+
+[bar.window_dock]
+position = "bottom"
+thickness = 64
+scale = 1.2
+margin_edge = 8
+margin_ends = 0
+background_opacity = 0
+compositor_blur = false
+auto_hide = true
+reserve_space = false
+start = []
+center = ["group:windows"]
+end = []
+
+[[bar.window_dock.capsule_group]]
+id = "windows"
+members = ["dock_launcher", "window_tasks"]
+fill = "surface_container"
+opacity = 0.88
+padding = 8
+radius = 16
+widget_spacing = 8
+
+[widget.launcher]
+glyph = "brand-finder"
+custom_image = "/usr/share/icons/cachyos.svg"
+scale = 1.6
+capsule_padding = 0
+
+[widget.menu_gap]
+type = "spacer"
+length = 8
+
+[widget.window_gap]
+type = "spacer"
+length = 8
+
+[widget.clock_left_gap]
+type = "spacer"
+length = 8
+
+[widget.clock_right_gap]
+type = "spacer"
+length = 8
+
+[widget.dock_launcher]
+type = "launcher"
+glyph = "grid-dots"
+scale = 1.8
+capsule_padding = 0
+
+[widget.window_tasks]
+type = "taskbar"
+pinned = []
+show_running = true
+show_all_outputs = true
+only_active_workspace = false
+group_by_workspace = false
+icon_scale = 2
+item_spacing = 8
+active_opacity = 1
+inactive_opacity = 1
+capsule_padding = 0
+
+[shell]
+font_family = "Adwaita Sans"
+
+[shell.launcher]
+layout = "full"
+default_view = "all"
+app_grid = true
+categories = true
+sort_by_usage = true
+search_position = "bottom"
+show_session_button = true
+
+[shell.panel]
+launcher_placement = "floating"
+launcher_position = "center"
+control_center_placement = "attached"
+session_placement = "floating"
+session_position = "center"
+
+[dock]
+enabled = false
+position = "bottom"
+auto_hide = true
+reserve_space = false
+margin_edge = 8
+margin_ends = 0
+icon_size = 40
+show_running = true
+show_dots = true
+launcher_position = "start"
+
+[theme]
+mode = "dark"
+source = "builtin"
+builtin = "Kanagawa"

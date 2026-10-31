@@ -1,7 +1,28 @@
-/* Lock header bar height so focused/unfocused state doesn't cause window resize in niri */
+/* Keep header bar height stable when focus changes. */
 headerbar,
 .titlebar {
     min-height: 46px;
     padding-top: 6px;
     padding-bottom: 6px;
 }
+
+windowcontrols button {
+    min-width: 14px;
+    min-height: 14px;
+    padding: 0;
+    margin: 0 3px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    box-shadow: none;
+}
+windowcontrols button image {
+    -gtk-icon-size: 13px;
+    min-width: 13px;
+    min-height: 13px;
+    border-radius: 999px;
+    color: transparent;
+}
+windowcontrols button.close { background-image: radial-gradient(circle 6.5px at center, #ff5f57 95%, transparent 100%); }
+windowcontrols button.minimize { background-image: radial-gradient(circle 6.5px at center, #febc2e 95%, transparent 100%); }
+windowcontrols button.maximize { background-image: radial-gradient(circle 6.5px at center, #28c840 95%, transparent 100%); }
